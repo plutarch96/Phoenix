@@ -38,7 +38,7 @@ api.interceptors.response.use(
 // Tests API
 export const testsAPI = {
   getAll: (params) => api.get('/tests', { params }),
-  getById: (id) => api.get(`/tests/${id}`),
+  getById: (id, userId) => api.get(`/tests/${id}`, { params: { user_id: userId } }),
   create: (data) => api.post('/tests', data),
   update: (id, data) => api.put(`/tests/${id}`, data),
   delete: (id) => api.delete(`/tests/${id}`),
@@ -46,6 +46,13 @@ export const testsAPI = {
     api.post(`/tests/${testId}/calibrations`, { calibration_id: calibrationId }),
   removeCalibration: (testId, calibrationId) =>
     api.delete(`/tests/${testId}/calibrations/${calibrationId}`),
+  // User test tagging
+  tagTest: (testId, userId) =>
+    api.post(`/tests/${testId}/tag`, { user_id: userId }),
+  untagTest: (testId, userId) =>
+    api.delete(`/tests/${testId}/tag`, { data: { user_id: userId } }),
+  getTaggedByUser: (userId) =>
+    api.get(`/tests/user/${userId}/tagged`),
 };
 
 // Calibrations API
@@ -114,6 +121,17 @@ export const equipmentTypesAPI = {
 // Search API (global search)
 export const searchAPI = {
   global: (query) => api.get('/search', { params: { q: query } }),
+};
+
+// Reports API
+export const reportsAPI = {
+  getByTest: (testId) => api.get(`/reports/test/${testId}`),
+  upload: (formData) => api.post('/reports/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  update: (id, data) => api.put(`/reports/${id}`, data),
+  delete: (id) => api.delete(`/reports/${id}`),
+  download: (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' }),
 };
 
 // Auth API

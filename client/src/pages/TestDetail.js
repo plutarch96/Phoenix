@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -12,9 +12,12 @@ import {
   Plus,
   X,
   Download,
-  FolderArchive
+  FolderArchive,
+  Tag,
+  File
 } from 'lucide-react';
-import { testsAPI, mediaAPI, calibrationsAPI, clientsAPI } from '../services/api';
+import { testsAPI, mediaAPI, calibrationsAPI, clientsAPI, reportsAPI } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
 import TestStream from '../components/TestStream';
@@ -24,6 +27,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function TestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isFRAEmployee } = useContext(AuthContext);
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
@@ -32,6 +36,10 @@ function TestDetail() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [clients, setClients] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showReportUpload, setShowReportUpload] = useState(false);
+  const [reportFile, setReportFile] = useState(null);
+  const [reportType, setReportType] = useState('draft');
+  const [uploadingReport, setUploadingReport] = useState(false);
 
   useEffect(() => {
     loadTest();
@@ -40,7 +48,7 @@ function TestDetail() {
 
   const loadTest = async () => {
     try {
-      const res = await testsAPI.getById(id);
+      const res = await testsAPI.getById(id, user?.id);
       setTest(res.data);
     } catch (error) {
       console.error('Error loading test:', error);
@@ -245,6 +253,79 @@ function TestDetail() {
   const openUploadModal = (category) => {
     setUploadCategory(category);
     setShowMediaUpload(true);
+  };
+
+  const handleToggleTag = async () => {
+    if (!user) return;
+
+    try {
+      if (test.isTaggedByUser) {
+        await testsAPI.untagTest(id, user.id);
+      } else {
+        await testsAPI.tagTest(id, user.id);
+      }
+      loadTest();
+    } catch (error) {
+      console.error('Error toggling tag:', error);
+      alert('Failed to update tag');
+    }
+  };
+
+  const handleReportUpload = async () => {
+    if (!reportFile || !user) return;
+
+    try {
+      setUploadingReport(true);
+      const formData = new FormData();
+      formData.append('file', reportFile);
+      formData.append('test_id', id);
+      formData.append('report_type', reportType);
+      formData.append('uploaded_by', user.id);
+
+      await reportsAPI.upload(formData);
+      setShowReportUpload(false);
+      setReportFile(null);
+      setReportType('draft');
+      loadTest();
+    } catch (error) {
+      console.error('Error uploading report:', error);
+      alert(error.response?.data?.error || 'Failed to upload report');
+    } finally {
+      setUploadingReport(false);
+    }
+  };
+
+  const handleDeleteReport = (reportId) => {
+    setConfirmDialog({
+      title: 'Delete Report',
+      message: 'Are you sure you want to delete this report? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await reportsAPI.delete(reportId);
+          loadTest();
+        } catch (error) {
+          console.error('Error deleting report:', error);
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
+  };
+
+  const handleDownloadReport = async (reportId) => {
+    try {
+      const response = await reportsAPI.download(reportId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Failed to download report');
+    }
   };
 
   if (loading) {
@@ -550,17 +631,162 @@ function TestDetail() {
         )}
       </div>
 
+      {/* 7. REPORTS */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            <File size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Test Reports ({test.reports?.length || 0})
+          </h3>
+          {isFRAEmployee() && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowReportUpload(true)}
+            >
+              <Upload size={16} />
+              Upload Report
+            </button>
+          )}
+        </div>
+
+        {test.reports && test.reports.length > 0 ? (
+          <div>
+            {test.reports.map(report => (
+              <div key={report.id} className="card" style={{ marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                    <File size={24} color="#64748b" />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <strong>{report.file_name}</strong>
+                        <span className={`badge ${report.report_type === 'final' ? 'badge-success' : 'badge-warning'}`}>
+                          {report.report_type === 'final' ? 'Final' : 'Draft'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        Uploaded by {report.uploaded_by_name} on {new Date(report.uploaded_at).toLocaleDateString()}
+                        {report.file_size && ` • ${(report.file_size / 1024 / 1024).toFixed(2)} MB`}
+                      </div>
+                      {report.notes && (
+                        <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
+                          {report.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleDownloadReport(report.id)}
+                    >
+                      <Download size={16} />
+                      Download
+                    </button>
+                    {isFRAEmployee() && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteReport(report.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No reports uploaded yet</p>
+            {isFRAEmployee() && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Upload draft or final reports for this test
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Report Upload Modal */}
+      {showReportUpload && (
+        <div className="modal-overlay" onClick={() => setShowReportUpload(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2>Upload Report</h2>
+              <button className="close-button" onClick={() => setShowReportUpload(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Report Type</label>
+                <select
+                  className="form-select"
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value)}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="final">Final</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">File (PDF, DOCX, DOC)</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  accept=".pdf,.docx,.doc"
+                  onChange={(e) => setReportFile(e.target.files[0])}
+                />
+                {reportFile && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#64748b' }}>
+                    Selected: {reportFile.name}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowReportUpload(false)}
+                disabled={uploadingReport}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleReportUpload}
+                disabled={!reportFile || uploadingReport}
+              >
+                {uploadingReport ? 'Uploading...' : 'Upload Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT/DELETE ACTIONS */}
       <div className="card">
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          <button className="btn btn-secondary" onClick={() => setShowTestModal(true)}>
-            <Edit size={20} />
-            Edit Test
-          </button>
-          <button className="btn btn-danger" onClick={handleDelete}>
-            <Trash2 size={20} />
-            Delete Test
-          </button>
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'space-between' }}>
+          <div>
+            <button
+              className={`btn ${test.isTaggedByUser ? 'btn-warning' : 'btn-secondary'}`}
+              onClick={handleToggleTag}
+              title={test.isTaggedByUser ? 'Remove from My Tests' : 'Add to My Tests'}
+            >
+              <Tag size={20} />
+              {test.isTaggedByUser ? 'Untagged from My Tests' : 'Tag as Mine'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-secondary" onClick={() => setShowTestModal(true)}>
+              <Edit size={20} />
+              Edit Test
+            </button>
+            <button className="btn btn-danger" onClick={handleDelete}>
+              <Trash2 size={20} />
+              Delete Test
+            </button>
+          </div>
         </div>
       </div>
 

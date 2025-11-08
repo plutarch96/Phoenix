@@ -8,7 +8,8 @@ import {
   Flame,
   LogOut,
   User as UserIcon,
-  Activity
+  Activity,
+  Tag
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -16,6 +17,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tests from './pages/Tests';
+import MyTests from './pages/MyTests';
 import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
@@ -52,6 +54,7 @@ function Navigation() {
   const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/tests', icon: TestTube, label: 'Tests' },
+    { path: '/my-tests', icon: Tag, label: 'My Tests' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
   ];
@@ -151,6 +154,7 @@ function MainApp() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/tests" element={<Tests />} />
+          <Route path="/my-tests" element={<MyTests />} />
           <Route path="/tests/:id" element={<TestDetail />} />
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />

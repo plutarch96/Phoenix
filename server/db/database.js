@@ -80,6 +80,36 @@ db.serialize(() => {
     )
   `);
 
+  // User test tags table (for "My Tests" feature)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_test_tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      test_id INTEGER NOT NULL,
+      tagged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+      UNIQUE(user_id, test_id)
+    )
+  `);
+
+  // Test reports table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS test_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      test_id INTEGER NOT NULL,
+      report_type TEXT NOT NULL DEFAULT 'draft',
+      file_name TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      file_size INTEGER,
+      uploaded_by INTEGER NOT NULL,
+      uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      notes TEXT,
+      FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+      FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    )
+  `);
+
   // Equipment types tracking for auto-generated IDs
   db.run(`
     CREATE TABLE IF NOT EXISTS equipment_types (
@@ -164,6 +194,9 @@ db.serialize(() => {
   db.run(`CREATE INDEX IF NOT EXISTS idx_client_contacts_client ON client_contacts(client_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_client ON tests(client_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_tags_test ON test_tags(test_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_user_test_tags_user ON user_test_tags(user_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_user_test_tags_test ON user_test_tags(test_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_test_reports_test ON test_reports(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_media_test ON test_media(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_test ON test_calibrations(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_cal ON test_calibrations(calibration_id)`);
