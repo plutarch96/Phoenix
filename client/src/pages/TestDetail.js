@@ -36,6 +36,7 @@ function TestDetail() {
   const [loading, setLoading] = useState(true);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [uploadCategory, setUploadCategory] = useState(null);
+  const [uploadMediaType, setUploadMediaType] = useState(null);
   const [showCalibrationSelector, setShowCalibrationSelector] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
   const [clients, setClients] = useState([]);
@@ -45,6 +46,7 @@ function TestDetail() {
   const [reportType, setReportType] = useState('draft');
   const [uploadingReport, setUploadingReport] = useState(false);
   const [previewReport, setPreviewReport] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     loadTest();
@@ -97,6 +99,7 @@ function TestDetail() {
   const handleMediaUploaded = () => {
     setShowMediaUpload(false);
     setUploadCategory(null);
+    setUploadMediaType(null);
     loadTest();
   };
 
@@ -255,8 +258,9 @@ function TestDetail() {
     }
   };
 
-  const openUploadModal = (category) => {
+  const openUploadModal = (category, mediaType = null) => {
     setUploadCategory(category);
+    setUploadMediaType(mediaType);
     setShowMediaUpload(true);
   };
 
@@ -371,7 +375,7 @@ function TestDetail() {
         </Link>
       </div>
 
-      {/* 1. TEST SUMMARY */}
+      {/* TEST SUMMARY - Always visible */}
       <div className="card">
         <h2 style={{ marginBottom: '0.5rem' }}>{test.title}</h2>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -419,10 +423,149 @@ function TestDetail() {
         )}
       </div>
 
-      {/* 2. LIVE STREAM */}
-      <TestStream testId={id} testTitle={test.title} />
+      {/* TAB NAVIGATION */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e5e7eb', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setActiveTab('overview')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'overview' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'overview' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'overview' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('stream')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'stream' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'stream' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'stream' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <VideoIcon size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Live Stream
+          </button>
+          <button
+            onClick={() => setActiveTab('testdata')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'testdata' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'testdata' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'testdata' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FileText size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Test Data ({testDataFiles.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('media')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'media' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'media' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'media' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <ImageIcon size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Media ({mediaFiles.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('calibrations')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'calibrations' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'calibrations' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'calibrations' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Settings size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Calibrations ({test.calibrations?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('other')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'other' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'other' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'other' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FileText size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Other Docs ({otherDocs.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'reports' ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === 'reports' ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'reports' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px',
+              transition: 'all 0.2s'
+            }}
+          >
+            <File size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+            Reports ({test.reports?.length || 0})
+          </button>
+        </div>
+      </div>
 
-      {/* 3. TEST DATA */}
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="card">
+          <div style={{ padding: '1rem' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Test Overview</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              Navigate through the tabs above to view live stream, test data, media, calibrations, documents, and reports for this test.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* LIVE STREAM TAB */}
+      {activeTab === 'stream' && (
+        <TestStream testId={id} testTitle={test.title} />
+      )}
+
+      {/* TEST DATA TAB */}
+      {activeTab === 'testdata' && (
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -456,64 +599,69 @@ function TestDetail() {
           </div>
         )}
       </div>
+      )}
 
-      {/* 4. MEDIA (Images & Videos) */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">
-            <ImageIcon size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Media ({mediaFiles.length})
-          </h3>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {mediaFiles.length > 0 && (
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleDownloadCategory('media')}
-              >
-                <FolderArchive size={16} />
-                Download All as ZIP
-              </button>
-            )}
+      {/* MEDIA TAB */}
+      {activeTab === 'media' && (
+      <div>
+        {/* Images Section */}
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-header">
+            <h3 className="card-title">
+              <ImageIcon size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+              Images ({images.length})
+            </h3>
             <button
               className="btn btn-primary btn-sm"
-              onClick={() => openUploadModal('media')}
+              onClick={() => openUploadModal('media', 'image')}
             >
               <Upload size={16} />
-              Upload Media
+              Upload Images
             </button>
           </div>
-        </div>
 
-        {images.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ImageIcon size={18} /> Images ({images.length})
-            </h4>
+          {images.length > 0 ? (
             <div className="media-grid">
               {images.map(media => renderMediaFile(media, true))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="empty-state">
+              <p>No images uploaded yet</p>
+            </div>
+          )}
+        </div>
 
-        {videos.length > 0 && (
-          <div>
-            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <VideoIcon size={18} /> Videos ({videos.length})
-            </h4>
+        {/* Videos Section */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <VideoIcon size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+              Videos ({videos.length})
+            </h3>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => openUploadModal('media', 'video')}
+            >
+              <Upload size={16} />
+              Upload Videos
+            </button>
+          </div>
+
+          {videos.length > 0 ? (
             <div className="media-grid">
               {videos.map(media => renderMediaFile(media, true))}
             </div>
-          </div>
-        )}
-
-        {mediaFiles.length === 0 && (
-          <div className="empty-state">
-            <p>No media files uploaded yet</p>
-          </div>
-        )}
+          ) : (
+            <div className="empty-state">
+              <p>No videos uploaded yet</p>
+            </div>
+          )}
+        </div>
       </div>
+      )}
 
-      {/* 5. CALIBRATION DOCUMENTS */}
+      {/* CALIBRATIONS TAB */}
+      {activeTab === 'calibrations' && (
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -612,8 +760,10 @@ function TestDetail() {
           </div>
         )}
       </div>
+      )}
 
-      {/* 6. OTHER DOCUMENTS */}
+      {/* OTHER DOCUMENTS TAB */}
+      {activeTab === 'other' && (
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -647,8 +797,10 @@ function TestDetail() {
           </div>
         )}
       </div>
+      )}
 
-      {/* 7. REPORTS */}
+      {/* REPORTS TAB */}
+      {activeTab === 'reports' && (
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -731,6 +883,7 @@ function TestDetail() {
           </div>
         )}
       </div>
+      )}
 
       {/* Report Upload Modal */}
       {showReportUpload && (
@@ -820,9 +973,11 @@ function TestDetail() {
         <MediaUpload
           testId={id}
           category={uploadCategory}
+          mediaType={uploadMediaType}
           onClose={() => {
             setShowMediaUpload(false);
             setUploadCategory(null);
+            setUploadMediaType(null);
           }}
           onSuccess={handleMediaUploaded}
         />

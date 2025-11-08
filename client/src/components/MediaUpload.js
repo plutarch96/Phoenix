@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, Image, Video, FileText } from 'lucide-react';
 import { mediaAPI } from '../services/api';
 
-function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
+function MediaUpload({ testId, category = 'media', mediaType = null, onClose, onSuccess }) {
   const [files, setFiles] = useState([]);
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -116,10 +116,10 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
         sizeInfo: 'Max 1GB per file'
       },
       media: {
-        title: 'Upload Media Files',
-        accept: 'image/*,video/*',
-        description: 'Images (JPG, PNG, GIF) and Videos (MP4, AVI, MOV, etc.)',
-        sizeInfo: 'Max 200MB for images, 10GB for videos'
+        title: mediaType === 'image' ? 'Upload Images' : mediaType === 'video' ? 'Upload Videos' : 'Upload Media Files',
+        accept: mediaType === 'image' ? 'image/*,.jpg,.jpeg,.png,.gif,.bmp,.webp' : mediaType === 'video' ? 'video/*,.mp4,.avi,.mov,.mkv,.webm' : 'image/*,video/*',
+        description: mediaType === 'image' ? 'Images only (JPG, PNG, GIF, BMP, WebP)' : mediaType === 'video' ? 'Videos only (MP4, AVI, MOV, MKV, WebM)' : 'Images (JPG, PNG, GIF) and Videos (MP4, AVI, MOV, etc.)',
+        sizeInfo: mediaType === 'image' ? 'Max 200MB per image' : mediaType === 'video' ? 'Max 10GB per video' : 'Max 200MB for images, 10GB for videos'
       },
       calibration: {
         title: 'Upload Calibration PDF',
