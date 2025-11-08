@@ -102,4 +102,14 @@ export const searchAPI = {
   global: (query) => api.get('/search', { params: { q: query } }),
 };
 
+// Auth API
+export const authAPI = {
+  login: (username, password) => api.post('/auth/login', { username, password }),
+  me: () => api.get('/auth/me'),
+  register: (data) => api.post('/auth/register', data),
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
+  getUsers: () => api.get('/auth/users'),
+};
+
 export default api;

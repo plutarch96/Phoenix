@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,10 +8,9 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // Configure axios defaults
+  // Load user on mount if token exists
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       loadUser();
     } else {
       setLoading(false);
@@ -20,7 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/me');
+      const res = await authAPI.me();
       setUser(res.data);
     } catch (error) {
       console.error('Error loading user:', error);
@@ -32,23 +31,20 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
-        username,
-        password
-      });
+      const res = await authAPI.login(username, password);
 
       const { token: newToken, user: userData } = res.data;
 
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Login failed'
+        error: error.response?.data?.error || error.message || 'Login failed. Please check if the server is running.'
       };
     }
   };
@@ -57,7 +53,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const isFRAEmployee = () => {
