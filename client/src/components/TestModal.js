@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { testsAPI } from '../services/api';
+import { testsAPI, projectsAPI } from '../services/api';
 
 function TestModal({ test, clients, onClose, onSuccess }) {
   // Determine if location is a preset or custom
@@ -15,11 +15,44 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     location: isPresetLocation ? test.location : (test?.location ? 'Other' : ''),
     customLocation: isPresetLocation || !test?.location ? '' : test.location,
     client_id: test?.client_id || '',
+    project_id: test?.project_id || '',
+    test_number: test?.test_number || '',
     test_date: test?.test_date || '',
     status: test?.status || 'Proposed',
     tags: test?.tags?.join(', ') || ''
   });
   const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState([]);
+
+  // Load projects when client is selected
+  useEffect(() => {
+    if (formData.client_id) {
+      loadProjects(formData.client_id);
+    } else {
+      setProjects([]);
+      setFormData(prev => ({ ...prev, project_id: '' }));
+    }
+  }, [formData.client_id]);
+
+  const loadProjects = async (clientId) => {
+    try {
+      const res = await projectsAPI.getAll({ client_id: clientId });
+      setProjects(res.data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const formatTestNumber = (value) => {
+    // Remove any non-digit characters
+    const digits = value.replace(/\D/g, '');
+
+    // Limit to 3 digits and pad with zeros
+    const limited = digits.slice(0, 3);
+
+    if (limited.length === 0) return '';
+    return limited.padStart(3, '0');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +63,8 @@ function TestModal({ test, clients, onClose, onSuccess }) {
         ...formData,
         location: formData.location === 'Other' ? formData.customLocation : formData.location,
         client_id: formData.client_id || null, // Convert empty string to null
+        project_id: formData.project_id || null,
+        test_number: formData.test_number ? formatTestNumber(formData.test_number) : null,
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
       };
 
@@ -52,10 +87,21 @@ function TestModal({ test, clients, onClose, onSuccess }) {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    // Allow only digits for test_number and limit to 3 characters
+    if (name === 'test_number') {
+      const digits = value.replace(/\D/g, '').slice(0, 3);
+      setFormData({
+        ...formData,
+        [name]: digits
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   return (
@@ -160,18 +206,60 @@ function TestModal({ test, clients, onClose, onSuccess }) {
           )}
 
           <div className="form-group">
-            <label className="form-label">Client</label>
+            <label className="form-label">Client *</label>
             <select
               name="client_id"
               className="form-select"
               value={formData.client_id}
               onChange={handleChange}
+              required
             >
-              <option value="">Select a client (optional)</option>
+              <option value="">Select a client</option>
               {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Project *</label>
+            <select
+              name="project_id"
+              className="form-select"
+              value={formData.project_id}
+              onChange={handleChange}
+              required
+              disabled={!formData.client_id}
+            >
+              <option value="">Select a project</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.id}>
+                  {project.project_name} (#{project.project_number})
+                </option>
+              ))}
+            </select>
+            {!formData.client_id && (
+              <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                Select a client first
+              </small>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Test Number *</label>
+            <input
+              type="text"
+              name="test_number"
+              className="form-input"
+              value={formData.test_number}
+              onChange={handleChange}
+              placeholder="e.g., 1, 15, or 120"
+              maxLength="3"
+              required
+            />
+            <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              3 digits (auto-padded). Will be formatted as: {formData.test_number ? formatTestNumber(formData.test_number) : 'XXX'}
+            </small>
           </div>
 
           <div className="form-group">
