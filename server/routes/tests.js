@@ -86,6 +86,7 @@ router.get('/', (req, res) => {
 // Get single test with all details
 router.get('/:id', (req, res) => {
   const { id } = req.params;
+  const { user_id } = req.query; // Optional user_id to check if user has tagged this test
 
   db.get(
     `SELECT t.*, c.name as client_name, c.contact_email, c.contact_phone
@@ -124,12 +125,51 @@ router.get('/:id', (req, res) => {
                 return res.status(500).json({ error: err.message });
               }
 
-              res.json({
-                ...test,
-                tags: tags.map(t => t.tag),
-                media: media,
-                calibrations: calibrations
-              });
+              // Get reports
+              db.all(
+                `SELECT r.*, u.username as uploaded_by_name
+                 FROM test_reports r
+                 LEFT JOIN users u ON r.uploaded_by = u.id
+                 WHERE r.test_id = ?
+                 ORDER BY r.uploaded_at DESC`,
+                [id],
+                (err, reports) => {
+                  if (err) {
+                    return res.status(500).json({ error: err.message });
+                  }
+
+                  // Check if user has tagged this test (if user_id provided)
+                  if (user_id) {
+                    db.get(
+                      'SELECT id FROM user_test_tags WHERE user_id = ? AND test_id = ?',
+                      [user_id, id],
+                      (err, userTag) => {
+                        if (err) {
+                          return res.status(500).json({ error: err.message });
+                        }
+
+                        res.json({
+                          ...test,
+                          tags: tags.map(t => t.tag),
+                          media: media,
+                          calibrations: calibrations,
+                          reports: reports,
+                          isTaggedByUser: !!userTag
+                        });
+                      }
+                    );
+                  } else {
+                    res.json({
+                      ...test,
+                      tags: tags.map(t => t.tag),
+                      media: media,
+                      calibrations: calibrations,
+                      reports: reports,
+                      isTaggedByUser: false
+                    });
+                  }
+                }
+              );
             }
           );
         });
@@ -280,6 +320,105 @@ router.delete('/:id/calibrations/:calibration_id', (req, res) => {
       res.json({ message: 'Calibration removed from test' });
     }
   );
+});
+
+// Tag test as "mine" for current user
+router.post('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.run(
+    'INSERT INTO user_test_tags (user_id, test_id) VALUES (?, ?)',
+    [user_id, id],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Test already tagged' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ message: 'Test tagged successfully' });
+    }
+  );
+});
+
+// Untag test for current user
+router.delete('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.run(
+    'DELETE FROM user_test_tags WHERE user_id = ? AND test_id = ?',
+    [user_id, id],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Test untagged successfully' });
+    }
+  );
+});
+
+// Get tests tagged by user (My Tests)
+router.get('/user/:user_id/tagged', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT DISTINCT t.*, c.name as client_name, utt.tagged_at
+    FROM tests t
+    LEFT JOIN clients c ON t.client_id = c.id
+    INNER JOIN user_test_tags utt ON t.id = utt.test_id
+    WHERE utt.user_id = ?
+    ORDER BY utt.tagged_at DESC
+  `;
+
+  db.all(query, [user_id], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Get tags for each test
+    const testIds = rows.map(r => r.id);
+    if (testIds.length === 0) {
+      return res.json([]);
+    }
+
+    const placeholders = testIds.map(() => '?').join(',');
+    db.all(
+      `SELECT test_id, tag FROM test_tags WHERE test_id IN (${placeholders})`,
+      testIds,
+      (err, tags) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Group tags by test_id
+        const tagsByTest = {};
+        tags.forEach(t => {
+          if (!tagsByTest[t.test_id]) {
+            tagsByTest[t.test_id] = [];
+          }
+          tagsByTest[t.test_id].push(t.tag);
+        });
+
+        // Add tags to each test
+        const testsWithTags = rows.map(test => ({
+          ...test,
+          tags: tagsByTest[test.id] || []
+        }));
+
+        res.json(testsWithTags);
+      }
+    );
+  });
 });
 
 module.exports = router;

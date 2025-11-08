@@ -229,6 +229,105 @@ router.get('/users', verifyToken, requireAdmin, (req, res) => {
   );
 });
 
+// Update user (admin only)
+router.put('/users/:id', verifyToken, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { username, email, role, client_id, is_active, password } = req.body;
+
+  if (!username || !email || !role) {
+    return res.status(400).json({ error: 'Username, email, and role are required' });
+  }
+
+  if (!['admin', 'employee', 'client'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  if (role === 'client' && !client_id) {
+    return res.status(400).json({ error: 'client_id is required for client users' });
+  }
+
+  try {
+    let query = `UPDATE users SET username = ?, email = ?, role = ?, client_id = ?, is_active = ? WHERE id = ?`;
+    let params = [username, email, role, role === 'client' ? client_id : null, is_active !== undefined ? is_active : 1, id];
+
+    db.run(query, params, function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Username or email already exists' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Log user update
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'user',
+        entityId: id,
+        details: `Updated user: ${username} with role: ${role}`,
+        ipAddress: req.ip
+      });
+
+      // If password is provided, update it separately
+      if (password) {
+        bcrypt.hash(password, 10).then(password_hash => {
+          db.run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash, id], (err) => {
+            if (err) {
+              console.error('Error updating password:', err);
+            }
+          });
+        });
+      }
+
+      res.json({ message: 'User updated successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating user' });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/users/:id', verifyToken, requireAdmin, (req, res) => {
+  const { id } = req.params;
+
+  // Prevent deleting yourself
+  if (parseInt(id) === req.user.id) {
+    return res.status(400).json({ error: 'Cannot delete your own account' });
+  }
+
+  // Get user info for logging before deletion
+  db.get('SELECT username, role FROM users WHERE id = ?', [id], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete user
+    db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Log user deletion
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'DELETE',
+        entityType: 'user',
+        entityId: id,
+        details: `Deleted user: ${user.username} (${user.role})`,
+        ipAddress: req.ip
+      });
+
+      res.json({ message: 'User deleted successfully' });
+    });
+  });
+});
+
 // Initialize default admin user (only runs if no users exist)
 const initializeDefaultAdmin = async () => {
   db.get('SELECT COUNT(*) as count FROM users', async (err, result) => {

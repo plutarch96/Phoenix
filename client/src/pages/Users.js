@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Users as UsersIcon, Plus, Shield, User as UserIcon, Briefcase } from 'lucide-react';
+import { Users as UsersIcon, Plus, Shield, User as UserIcon, Briefcase, Edit2, Trash2 } from 'lucide-react';
 import { authAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import UserModal from '../components/UserModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function Users() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: currentUser } = useAuth();
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     if (!isAdmin()) {
@@ -27,7 +32,7 @@ function Users() {
       setUsers(res.data);
     } catch (error) {
       console.error('Error loading users:', error);
-      alert('Failed to load users');
+      toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
@@ -44,7 +49,37 @@ function Users() {
 
   const handleUserCreated = () => {
     setShowModal(false);
+    setSelectedUser(null);
     loadUsers();
+  };
+
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const handleDelete = (user) => {
+    if (user.id === currentUser.id) {
+      toast.error('You cannot delete your own account');
+      return;
+    }
+
+    setConfirmDialog({
+      title: 'Delete User',
+      message: `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await authAPI.deleteUser(user.id);
+          toast.success(`User "${user.username}" deleted successfully`);
+          loadUsers();
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          toast.error(error.response?.data?.error || 'Failed to delete user');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   const getRoleIcon = (role) => {
@@ -94,7 +129,7 @@ function Users() {
         <div>
           <h2>User Management</h2>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={() => { setSelectedUser(null); setShowModal(true); }}>
           <Plus size={20} />
           Add User
         </button>
@@ -124,6 +159,7 @@ function Users() {
                   <th style={{ padding: '0.75rem', fontWeight: 600, color: '#64748b' }}>Status</th>
                   <th style={{ padding: '0.75rem', fontWeight: 600, color: '#64748b' }}>Created</th>
                   <th style={{ padding: '0.75rem', fontWeight: 600, color: '#64748b' }}>Last Login</th>
+                  <th style={{ padding: '0.75rem', fontWeight: 600, color: '#64748b' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -154,6 +190,26 @@ function Users() {
                     </td>
                     <td style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.875rem' }}>
                       {formatDate(user.last_login)}
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleEdit(user)}
+                          title="Edit user"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(user)}
+                          disabled={user.id === currentUser.id}
+                          title={user.id === currentUser.id ? "Cannot delete yourself" : "Delete user"}
+                          style={{ opacity: user.id === currentUser.id ? 0.5 : 1, cursor: user.id === currentUser.id ? 'not-allowed' : 'pointer' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -203,9 +259,22 @@ function Users() {
 
       {showModal && (
         <UserModal
+          user={selectedUser}
           clients={clients}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedUser(null);
+          }}
           onSuccess={handleUserCreated}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
         />
       )}
     </div>

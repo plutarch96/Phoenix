@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, FileText, Trash2, Edit2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Search, AlertTriangle, FileText, Trash2, Edit2, Download, Upload, X } from 'lucide-react';
 import { calibrationsAPI } from '../services/api';
 import CalibrationModal from '../components/CalibrationModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 
 function Calibrations() {
   const [calibrations, setCalibrations] = useState([]);
@@ -11,6 +12,11 @@ function Calibrations() {
   const [selectedCalibration, setSelectedCalibration] = useState(null);
   const [filter, setFilter] = useState('all'); // all, valid, expired
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [equipmentTypeFilter, setEquipmentTypeFilter] = useState('');
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const fileInputRef = useRef(null);
+  const toast = useToast();
 
   useEffect(() => {
     loadCalibrations();
@@ -56,15 +62,154 @@ function Calibrations() {
     setShowModal(true);
   };
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Equipment Name',
+      'Equipment ID',
+      'Equipment Type',
+      'Serial Number',
+      'Calibration Date',
+      'Expiration Date',
+      'Calibrated By',
+      'Status',
+      'Calibration Sheet',
+      'Notes'
+    ];
+
+    const rows = calibrations.map(cal => [
+      cal.equipment_name,
+      cal.equipment_id,
+      cal.equipment_type,
+      cal.serial_number || '',
+      cal.calibration_date,
+      cal.expiration_date,
+      cal.calibrated_by || '',
+      cal.status,
+      cal.pdf_path ? 'Yes' : 'No',
+      cal.notes || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `calibrations_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('CSV exported successfully');
+  };
+
+  const handleImportCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n').filter(line => line.trim());
+        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+        // Validate headers
+        const requiredHeaders = ['Equipment Name', 'Equipment ID', 'Equipment Type', 'Calibration Date', 'Expiration Date'];
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        if (missingHeaders.length > 0) {
+          toast.error(`Missing required columns: ${missingHeaders.join(', ')}`);
+          return;
+        }
+
+        const dataLines = lines.slice(1);
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const line of dataLines) {
+          if (!line.trim()) continue;
+
+          // Parse CSV line (handle quoted fields)
+          const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.replace(/^"|"$/g, '').trim());
+
+          const rowData = {};
+          headers.forEach((header, index) => {
+            rowData[header] = values[index] || '';
+          });
+
+          try {
+            const formData = new FormData();
+            formData.append('equipment_name', rowData['Equipment Name']);
+            formData.append('equipment_type', rowData['Equipment Type']);
+            formData.append('equipment_id', rowData['Equipment ID']);
+            formData.append('serial_number', rowData['Serial Number'] || '');
+            formData.append('calibration_date', rowData['Calibration Date']);
+            formData.append('expiration_date', rowData['Expiration Date']);
+            formData.append('calibrated_by', rowData['Calibrated By'] || '');
+            formData.append('notes', rowData['Notes'] || '');
+
+            await calibrationsAPI.create(formData);
+            successCount++;
+          } catch (error) {
+            console.error('Error importing row:', rowData, error);
+            errorCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          toast.success(`Successfully imported ${successCount} calibration record${successCount > 1 ? 's' : ''}`);
+          loadCalibrations();
+        }
+        if (errorCount > 0) {
+          toast.error(`Failed to import ${errorCount} record${errorCount > 1 ? 's' : ''}`);
+        }
+
+        setShowBulkImport(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } catch (error) {
+        console.error('CSV parsing error:', error);
+        toast.error('Failed to parse CSV file. Please check the format.');
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   const filteredCalibrations = calibrations.filter(cal => {
-    if (filter === 'all') return true;
-    if (filter === 'valid') return cal.status === 'valid';
-    if (filter === 'expired') return cal.status === 'expired';
+    // Status filter
+    if (filter !== 'all') {
+      if (filter === 'valid' && cal.status !== 'valid') return false;
+      if (filter === 'expired' && cal.status !== 'expired') return false;
+    }
+
+    // Equipment type filter
+    if (equipmentTypeFilter && cal.equipment_type !== equipmentTypeFilter) return false;
+
+    // Search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        cal.equipment_name.toLowerCase().includes(query) ||
+        cal.equipment_id.toLowerCase().includes(query) ||
+        cal.equipment_type.toLowerCase().includes(query) ||
+        (cal.serial_number && cal.serial_number.toLowerCase().includes(query)) ||
+        (cal.calibrated_by && cal.calibrated_by.toLowerCase().includes(query)) ||
+        (cal.notes && cal.notes.toLowerCase().includes(query))
+      );
+    }
+
     return true;
   });
 
   const expiredCount = calibrations.filter(c => c.status === 'expired').length;
   const validCount = calibrations.filter(c => c.status === 'valid').length;
+
+  // Get unique equipment types for filter dropdown
+  const equipmentTypes = [...new Set(calibrations.map(cal => cal.equipment_type))].sort();
 
   return (
     <div className="page">
@@ -72,14 +217,81 @@ function Calibrations() {
         <div>
           <h2>Calibration Equipment</h2>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={20} />
-          Add Calibration
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn btn-secondary" onClick={handleExportCSV}>
+            <Download size={20} />
+            Export CSV
+          </button>
+          <button className="btn btn-secondary" onClick={() => setShowBulkImport(true)}>
+            <Upload size={20} />
+            Bulk Import
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={20} />
+            Add Calibration
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <div className="card">
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Search */}
+          <div style={{ flex: '1 1 300px', position: 'relative' }}>
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#64748b'
+              }}
+            />
+            <input
+              type="text"
+              className="form-input"
+              style={{ paddingLeft: '40px', paddingRight: searchQuery ? '40px' : '12px' }}
+              placeholder="Search by name, ID, type, or notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={16} color="#64748b" />
+              </button>
+            )}
+          </div>
+
+          {/* Equipment Type Filter */}
+          <select
+            className="form-select"
+            style={{ width: 'auto', minWidth: '200px' }}
+            value={equipmentTypeFilter}
+            onChange={(e) => setEquipmentTypeFilter(e.target.value)}
+          >
+            <option value="">All Equipment Types</option>
+            {equipmentTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Status Filters */}
         <div className="filter-buttons">
           <button
             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
@@ -100,6 +312,12 @@ function Calibrations() {
             Expired ({expiredCount})
           </button>
         </div>
+
+        {(searchQuery || equipmentTypeFilter) && (
+          <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            Showing {filteredCalibrations.length} of {calibrations.length} records
+          </div>
+        )}
       </div>
 
       {/* Calibrations List */}
@@ -224,6 +442,69 @@ function Calibrations() {
           onConfirm={confirmDialog.onConfirm}
           onCancel={confirmDialog.onCancel}
         />
+      )}
+
+      {showBulkImport && (
+        <div className="modal-overlay" onClick={() => setShowBulkImport(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Bulk Import Calibrations</h2>
+              <button onClick={() => setShowBulkImport(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.75rem' }}>CSV Format Requirements</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  Your CSV file must include the following columns:
+                </p>
+                <ul style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', paddingLeft: '1.5rem' }}>
+                  <li><strong>Equipment Name</strong> (required)</li>
+                  <li><strong>Equipment ID</strong> (required)</li>
+                  <li><strong>Equipment Type</strong> (required)</li>
+                  <li><strong>Calibration Date</strong> (required, format: YYYY-MM-DD)</li>
+                  <li><strong>Expiration Date</strong> (required, format: YYYY-MM-DD)</li>
+                  <li>Serial Number (optional)</li>
+                  <li>Calibrated By (optional)</li>
+                  <li>Notes (optional)</li>
+                </ul>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>Example CSV:</h4>
+                <pre style={{ fontSize: '0.75rem', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+Equipment Name,Equipment ID,Equipment Type,Serial Number,Calibration Date,Expiration Date,Calibrated By,Notes
+"Heat Flux Gauge","HFG-001","Heat Flux Gauge","SN12345","2024-01-15","2025-01-15","NIST","Primary standard"
+"TC Mod","TCM-002","TC Mod","","2024-02-20","2025-02-20","Cal Lab","Type K thermocouple"
+                </pre>
+              </div>
+
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportCSV}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ width: '100%' }}
+                >
+                  <Upload size={20} />
+                  Select CSV File to Import
+                </button>
+              </div>
+
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--color-warning-light)', borderRadius: '8px', fontSize: '0.875rem' }}>
+                <strong>Note:</strong> This will add new calibration records. Existing records will not be modified.
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

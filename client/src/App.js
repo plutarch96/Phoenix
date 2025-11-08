@@ -8,21 +8,28 @@ import {
   Flame,
   LogOut,
   User as UserIcon,
-  Activity
+  Activity,
+  Tag,
+  FolderOpen
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tests from './pages/Tests';
+import MyTests from './pages/MyTests';
 import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
+import Projects from './pages/Projects';
 import UsersPage from './pages/Users';
 import AuditLog from './pages/AuditLog';
+import SearchResults from './pages/SearchResults';
 import GlobalSearch from './components/GlobalSearch';
 import ThemeToggle from './components/ThemeToggle';
+import Toast from './components/Toast';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -52,8 +59,10 @@ function Navigation() {
   const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/tests', icon: TestTube, label: 'Tests' },
+    { path: '/my-tests', icon: Tag, label: 'My Tests' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
+    { path: '/projects', icon: FolderOpen, label: 'Projects' },
   ];
 
   // Admin-only navigation items
@@ -151,13 +160,17 @@ function MainApp() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/tests" element={<Tests />} />
+          <Route path="/my-tests" element={<MyTests />} />
           <Route path="/tests/:id" element={<TestDetail />} />
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/projects" element={<Projects />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/audit" element={<AuditLog />} />
+          <Route path="/search" element={<SearchResults />} />
         </Routes>
       </main>
+      <Toast />
     </div>
   );
 }
@@ -166,16 +179,18 @@ function App() {
   return (
     <Router>
       <ThemeProvider>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/*" element={
-              <PrivateRoute>
-                <MainApp />
-              </PrivateRoute>
-            } />
-          </Routes>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={
+                <PrivateRoute>
+                  <MainApp />
+                </PrivateRoute>
+              } />
+            </Routes>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </Router>
   );

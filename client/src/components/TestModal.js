@@ -3,15 +3,20 @@ import { X } from 'lucide-react';
 import { testsAPI } from '../services/api';
 
 function TestModal({ test, clients, onClose, onSuccess }) {
+  // Determine if location is a preset or custom
+  const presetLocations = ['Rockville', 'York', 'Cambridge'];
+  const isPresetLocation = test?.location && presetLocations.includes(test.location);
+
   const [formData, setFormData] = useState({
     title: test?.title || '',
     description: test?.description || '',
     test_type: test?.test_type || '',
     governing_standard: test?.governing_standard || '',
-    location: test?.location || '',
+    location: isPresetLocation ? test.location : (test?.location ? 'Other' : ''),
+    customLocation: isPresetLocation || !test?.location ? '' : test.location,
     client_id: test?.client_id || '',
     test_date: test?.test_date || '',
-    status: test?.status || 'pending',
+    status: test?.status || 'Proposed',
     tags: test?.tags?.join(', ') || ''
   });
   const [loading, setLoading] = useState(false);
@@ -23,9 +28,13 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     try {
       const data = {
         ...formData,
+        location: formData.location === 'Other' ? formData.customLocation : formData.location,
         client_id: formData.client_id || null, // Convert empty string to null
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
       };
+
+      // Remove customLocation from data as it's not a database field
+      delete data.customLocation;
 
       if (test) {
         await testsAPI.update(test.id, data);
@@ -114,21 +123,41 @@ function TestModal({ test, clients, onClose, onSuccess }) {
                 <option value="UL 9540A">UL 9540A</option>
                 <option value="CSA 800">CSA 800</option>
                 <option value="NFPA 855">NFPA 855</option>
+                <option value="Other">Other</option>
+                <option value="None">None</option>
               </select>
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">Location</label>
-            <input
-              type="text"
+            <select
               name="location"
-              className="form-input"
+              className="form-select"
               value={formData.location}
               onChange={handleChange}
-              placeholder="e.g., Lab A, Building 3, Maryland Facility"
-            />
+            >
+              <option value="">Select location</option>
+              <option value="Rockville">Rockville</option>
+              <option value="York">York</option>
+              <option value="Cambridge">Cambridge</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
+
+          {formData.location === 'Other' && (
+            <div className="form-group">
+              <label className="form-label">Custom Location</label>
+              <input
+                type="text"
+                name="customLocation"
+                className="form-input"
+                value={formData.customLocation}
+                onChange={handleChange}
+                placeholder="Enter custom location"
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Client</label>
@@ -164,10 +193,10 @@ function TestModal({ test, clients, onClose, onSuccess }) {
               value={formData.status}
               onChange={handleChange}
             >
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
+              <option value="Proposed">Proposed</option>
+              <option value="Planning">Planning</option>
+              <option value="Complete">Complete</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
 
