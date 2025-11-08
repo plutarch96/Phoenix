@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Eye, Tag } from 'lucide-react';
+import { Eye, Tag } from 'lucide-react';
 import { testsAPI } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -41,7 +41,7 @@ function MyTests() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>My Tests</h2>
+          <h2>My Tests {!loading && tests.length > 0 && <span style={{ fontSize: '1rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>({tests.length})</span>}</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
             Tests you've tagged for quick access
           </p>

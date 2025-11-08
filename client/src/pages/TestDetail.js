@@ -261,18 +261,28 @@ function TestDetail() {
     try {
       if (test.isTaggedByUser) {
         await testsAPI.untagTest(id, user.id);
+        // Success feedback could be added here
       } else {
         await testsAPI.tagTest(id, user.id);
+        // Success feedback could be added here
       }
       loadTest();
     } catch (error) {
       console.error('Error toggling tag:', error);
-      alert('Failed to update tag');
+      const errorMsg = error.response?.data?.error || 'Failed to update tag';
+      alert(errorMsg);
     }
   };
 
   const handleReportUpload = async () => {
     if (!reportFile || !user) return;
+
+    // Validate file size (100MB limit)
+    const maxSize = 100 * 1024 * 1024;
+    if (reportFile.size > maxSize) {
+      alert(`File size exceeds 100MB limit. Current size: ${(reportFile.size / 1024 / 1024).toFixed(2)}MB`);
+      return;
+    }
 
     try {
       setUploadingReport(true);
@@ -312,16 +322,17 @@ function TestDetail() {
     });
   };
 
-  const handleDownloadReport = async (reportId) => {
+  const handleDownloadReport = async (report) => {
     try {
-      const response = await reportsAPI.download(reportId);
+      const response = await reportsAPI.download(report.id);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'report.pdf');
+      link.setAttribute('download', report.file_name);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading report:', error);
       alert('Failed to download report');
@@ -677,7 +688,7 @@ function TestDetail() {
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       className="btn btn-primary btn-sm"
-                      onClick={() => handleDownloadReport(report.id)}
+                      onClick={() => handleDownloadReport(report)}
                     >
                       <Download size={16} />
                       Download
@@ -730,7 +741,7 @@ function TestDetail() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">File (PDF, DOCX, DOC)</label>
+                <label className="form-label">File (PDF, DOCX, DOC - Max 100MB)</label>
                 <input
                   type="file"
                   className="form-input"
@@ -739,7 +750,8 @@ function TestDetail() {
                 />
                 {reportFile && (
                   <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#64748b' }}>
-                    Selected: {reportFile.name}
+                    <div><strong>Selected:</strong> {reportFile.name}</div>
+                    <div><strong>Size:</strong> {(reportFile.size / 1024 / 1024).toFixed(2)} MB</div>
                   </div>
                 )}
               </div>
@@ -774,7 +786,7 @@ function TestDetail() {
               title={test.isTaggedByUser ? 'Remove from My Tests' : 'Add to My Tests'}
             >
               <Tag size={20} />
-              {test.isTaggedByUser ? 'Untagged from My Tests' : 'Tag as Mine'}
+              {test.isTaggedByUser ? 'Untag from My Tests' : 'Tag as Mine'}
             </button>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
