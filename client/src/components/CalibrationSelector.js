@@ -69,7 +69,7 @@ function CalibrationSelector({ testId, onClose, onSuccess }) {
           <div style={{ position: 'relative' }}>
             <Search
               size={20}
-              style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}
+              style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}
             />
             <input
               type="text"
@@ -113,10 +113,10 @@ function CalibrationSelector({ testId, onClose, onSuccess }) {
                     <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
                       {cal.equipment_name}
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                       ID: {cal.equipment_id}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                       Expires: {new Date(cal.expiration_date).toLocaleDateString()}
                     </div>
                   </div>

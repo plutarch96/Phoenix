@@ -159,7 +159,7 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
               accept={info.accept}
               style={{ width: '100%' }}
             />
-            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
               Supported: {info.description} ({info.sizeInfo})
             </p>
           </div>
@@ -173,7 +173,7 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
                     {getFileIcon(file)}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>{file.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         {formatFileSize(file.size)}
                       </div>
                     </div>
@@ -206,7 +206,7 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
                   }}
                 />
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem', textAlign: 'center' }}>
                 Uploading... {uploadProgress}%
               </p>
             </div>

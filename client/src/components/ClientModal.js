@@ -81,7 +81,7 @@ function ClientModal({ client, onClose, onSuccess }) {
               required
               placeholder="e.g., 549"
             />
-            <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
+            <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
               This will be used in test IDs: {formData.client_number || '###'}-007-001
             </small>
           </div>

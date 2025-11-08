@@ -90,7 +90,7 @@ function UserModal({ clients, onClose, onSuccess }) {
               minLength="6"
               placeholder="Minimum 6 characters"
             />
-            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               User will be able to change this after their first login
             </p>
           </div>
@@ -128,7 +128,7 @@ function UserModal({ clients, onClose, onSuccess }) {
                   </option>
                 ))}
               </select>
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                 This user will only see information for this client
               </p>
             </div>
