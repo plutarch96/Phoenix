@@ -17,6 +17,7 @@ import Tests from './pages/Tests';
 import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
+import UsersPage from './pages/Users';
 import GlobalSearch from './components/GlobalSearch';
 import './App.css';
 
@@ -41,14 +42,23 @@ function PrivateRoute({ children }) {
 
 function Navigation() {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
-  const navItems = [
+  // Base navigation items (visible to all)
+  const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/tests', icon: TestTube, label: 'Tests' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
   ];
+
+  // Admin-only navigation items
+  const adminNavItems = [
+    { path: '/users', icon: UserIcon, label: 'User Management' },
+  ];
+
+  // Combine navigation items based on role
+  const navItems = isAdmin() ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   return (
     <nav className="sidebar">
@@ -145,6 +155,7 @@ function MainApp() {
           <Route path="/tests/:id" element={<TestDetail />} />
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/users" element={<UsersPage />} />
         </Routes>
       </main>
     </div>
