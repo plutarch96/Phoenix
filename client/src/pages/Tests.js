@@ -66,7 +66,6 @@ function Tests() {
       <div className="page-header">
         <div>
           <h2>Tests</h2>
-          <p>Manage and track all your tests</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={20} />

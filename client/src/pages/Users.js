@@ -93,7 +93,6 @@ function Users() {
       <div className="page-header">
         <div>
           <h2>User Management</h2>
-          <p>Manage FRA employees and client accounts</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={20} />

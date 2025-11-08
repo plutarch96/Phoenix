@@ -63,7 +63,6 @@ function Calibrations() {
       <div className="page-header">
         <div>
           <h2>Calibration Equipment</h2>
-          <p>Manage calibrated equipment and certificates</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={20} />

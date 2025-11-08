@@ -71,7 +71,6 @@ function Dashboard() {
     <div className="page">
       <div className="page-header">
         <h2>Dashboard</h2>
-        <p>Overview of your test tracking system</p>
       </div>
 
       {/* Main Stats */}
