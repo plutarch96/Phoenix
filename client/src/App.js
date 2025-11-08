@@ -73,7 +73,7 @@ function App() {
             justifyContent: 'space-between'
           }}>
             <h3 style={{ margin: 0, color: '#1e293b' }}>
-              Maryland Fire Testing Laboratory
+              FRA Lab - Fire Research & Analysis
             </h3>
             <GlobalSearch />
           </div>
