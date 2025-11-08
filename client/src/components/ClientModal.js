@@ -20,16 +20,20 @@ function ClientModal({ client, onClose, onSuccess }) {
     setLoading(true);
 
     try {
+      console.log('Submitting client data:', formData);
+
       if (client) {
         await clientsAPI.update(client.id, formData);
       } else {
-        await clientsAPI.create(formData);
+        const response = await clientsAPI.create(formData);
+        console.log('Client created:', response.data);
       }
 
       onSuccess();
     } catch (error) {
       console.error('Error saving client:', error);
-      alert('Failed to save client');
+      console.error('Error details:', error.response?.data);
+      alert('Failed to save client: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
