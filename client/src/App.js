@@ -14,6 +14,7 @@ import {
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tests from './pages/Tests';
@@ -25,6 +26,7 @@ import UsersPage from './pages/Users';
 import AuditLog from './pages/AuditLog';
 import GlobalSearch from './components/GlobalSearch';
 import ThemeToggle from './components/ThemeToggle';
+import Toast from './components/Toast';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -162,6 +164,7 @@ function MainApp() {
           <Route path="/audit" element={<AuditLog />} />
         </Routes>
       </main>
+      <Toast />
     </div>
   );
 }
@@ -170,16 +173,18 @@ function App() {
   return (
     <Router>
       <ThemeProvider>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/*" element={
-              <PrivateRoute>
-                <MainApp />
-              </PrivateRoute>
-            } />
-          </Routes>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={
+                <PrivateRoute>
+                  <MainApp />
+                </PrivateRoute>
+              } />
+            </Routes>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </Router>
   );

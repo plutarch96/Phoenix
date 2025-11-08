@@ -14,20 +14,24 @@ import {
   Download,
   FolderArchive,
   Tag,
-  File
+  File,
+  Eye
 } from 'lucide-react';
 import { testsAPI, mediaAPI, calibrationsAPI, clientsAPI, reportsAPI } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
 import TestStream from '../components/TestStream';
 import TestModal from '../components/TestModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import ReportPreview from '../components/ReportPreview';
 
 function TestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isFRAEmployee } = useContext(AuthContext);
+  const toast = useToast();
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
@@ -40,6 +44,7 @@ function TestDetail() {
   const [reportFile, setReportFile] = useState(null);
   const [reportType, setReportType] = useState('draft');
   const [uploadingReport, setUploadingReport] = useState(false);
+  const [previewReport, setPreviewReport] = useState(null);
 
   useEffect(() => {
     loadTest();
@@ -81,7 +86,7 @@ function TestDetail() {
           navigate('/tests');
         } catch (error) {
           console.error('Error deleting test:', error);
-          alert('Failed to delete test');
+          toast.error('Failed to delete test');
         }
         setConfirmDialog(null);
       },
@@ -261,16 +266,16 @@ function TestDetail() {
     try {
       if (test.isTaggedByUser) {
         await testsAPI.untagTest(id, user.id);
-        // Success feedback could be added here
+        toast.success('Test removed from My Tests');
       } else {
         await testsAPI.tagTest(id, user.id);
-        // Success feedback could be added here
+        toast.success('Test added to My Tests');
       }
       loadTest();
     } catch (error) {
       console.error('Error toggling tag:', error);
       const errorMsg = error.response?.data?.error || 'Failed to update tag';
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -280,7 +285,7 @@ function TestDetail() {
     // Validate file size (100MB limit)
     const maxSize = 100 * 1024 * 1024;
     if (reportFile.size > maxSize) {
-      alert(`File size exceeds 100MB limit. Current size: ${(reportFile.size / 1024 / 1024).toFixed(2)}MB`);
+      toast.error(`File size exceeds 100MB limit. Current size: ${(reportFile.size / 1024 / 1024).toFixed(2)}MB`);
       return;
     }
 
@@ -293,13 +298,14 @@ function TestDetail() {
       formData.append('uploaded_by', user.id);
 
       await reportsAPI.upload(formData);
+      toast.success('Report uploaded successfully');
       setShowReportUpload(false);
       setReportFile(null);
       setReportType('draft');
       loadTest();
     } catch (error) {
       console.error('Error uploading report:', error);
-      alert(error.response?.data?.error || 'Failed to upload report');
+      toast.error(error.response?.data?.error || 'Failed to upload report');
     } finally {
       setUploadingReport(false);
     }
@@ -335,7 +341,7 @@ function TestDetail() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading report:', error);
-      alert('Failed to download report');
+      toast.error('Failed to download report');
     }
   };
 
@@ -687,6 +693,14 @@ function TestDetail() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setPreviewReport(report)}
+                      title="Preview report"
+                    >
+                      <Eye size={16} />
+                      Preview
+                    </button>
+                    <button
                       className="btn btn-primary btn-sm"
                       onClick={() => handleDownloadReport(report)}
                     >
@@ -828,6 +842,14 @@ function TestDetail() {
           clients={clients}
           onClose={() => setShowTestModal(false)}
           onSuccess={handleTestUpdated}
+        />
+      )}
+
+      {previewReport && (
+        <ReportPreview
+          report={previewReport}
+          onClose={() => setPreviewReport(null)}
+          onDownload={handleDownloadReport}
         />
       )}
 
