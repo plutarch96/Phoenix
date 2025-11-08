@@ -14,7 +14,8 @@ import { analyticsAPI } from '../services/api';
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
-  const [recentActivity, setRecentActivity] = useState([]);
+  const [recentTests, setRecentTests] = useState([]);
+  const [expiringCalibrations, setExpiringCalibrations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,17 +24,33 @@ function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [statsRes, activityRes] = await Promise.all([
+      const [statsRes, testsRes, calibrationsRes] = await Promise.all([
         analyticsAPI.getDashboard(),
-        analyticsAPI.getRecentActivity(5)
+        analyticsAPI.getRecentTests(5),
+        analyticsAPI.getExpiringSoonCalibrations()
       ]);
       setStats(statsRes.data);
-      setRecentActivity(activityRes.data);
+      setRecentTests(testsRes.data);
+      setExpiringCalibrations(calibrationsRes.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`;
+  };
+
+  const getDaysUntilExpiration = (expirationDate) => {
+    const today = new Date();
+    const expDate = new Date(expirationDate);
+    const diffTime = expDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   if (loading) {
@@ -152,42 +169,99 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Recent Activity */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Recent Activity</h3>
-          <TrendingUp size={20} color="#64748b" />
+      {/* Recent Tests and Expiring Calibrations */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        {/* Recent Tests */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Recent Tests</h3>
+            <TestTube size={20} color="#64748b" />
+          </div>
+          {recentTests.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {recentTests.map((test) => (
+                <Link
+                  key={test.id}
+                  to={`/tests/${test.id}`}
+                  style={{
+                    textDecoration: 'none',
+                    padding: '0.75rem',
+                    background: '#f9fafb',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb',
+                    transition: 'all 0.2s'
+                  }}
+                  className="hover-lift"
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
+                    <strong style={{ color: '#1e293b', fontSize: '0.875rem' }}>{test.title}</strong>
+                    <span className={`badge ${
+                      test.status === 'completed' ? 'badge-success' :
+                      test.status === 'in-progress' ? 'badge-warning' :
+                      test.status === 'pending' ? 'badge-info' : 'badge-danger'
+                    }`}>
+                      {test.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem' }}>
+                    {test.test_type && <span>Type: {test.test_type}</span>}
+                    <span>Created: {formatDate(test.created_at)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>No recent tests</p>
+            </div>
+          )}
         </div>
-        {recentActivity.length > 0 ? (
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Title</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivity.map((activity, index) => (
-                  <tr key={index}>
-                    <td>
-                      <span className={`badge ${activity.type === 'test' ? 'badge-info' : 'badge-success'}`}>
-                        {activity.type}
+
+        {/* Expiring Calibrations */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Equipment Expiring Soon</h3>
+            <AlertTriangle size={20} color="#f59e0b" />
+          </div>
+          {expiringCalibrations.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {expiringCalibrations.map((calibration) => {
+                const daysLeft = getDaysUntilExpiration(calibration.expiration_date);
+                const isUrgent = daysLeft <= 7;
+                return (
+                  <Link
+                    key={calibration.id}
+                    to="/calibrations"
+                    style={{
+                      textDecoration: 'none',
+                      padding: '0.75rem',
+                      background: isUrgent ? '#fef2f2' : '#f9fafb',
+                      borderRadius: '6px',
+                      border: `1px solid ${isUrgent ? '#fca5a5' : '#e5e7eb'}`,
+                      transition: 'all 0.2s'
+                    }}
+                    className="hover-lift"
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
+                      <strong style={{ color: '#1e293b', fontSize: '0.875rem' }}>{calibration.equipment_name}</strong>
+                      <span className={`badge ${isUrgent ? 'badge-danger' : 'badge-warning'}`}>
+                        {daysLeft} day{daysLeft !== 1 ? 's' : ''}
                       </span>
-                    </td>
-                    <td>{activity.title}</td>
-                    <td>{new Date(activity.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <p>No recent activity</p>
-          </div>
-        )}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem' }}>
+                      <span>ID: {calibration.equipment_id}</span>
+                      <span>Expires: {formatDate(calibration.expiration_date)}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>No equipment expiring in the next 30 days</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

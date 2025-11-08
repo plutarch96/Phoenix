@@ -4,8 +4,9 @@ import { calibrationsAPI, equipmentTypesAPI } from '../services/api';
 
 function CalibrationModal({ calibration, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    equipment_model: calibration?.equipment_name || '', // Using equipment_name field for model
-    equipment_serial: calibration?.equipment_id || '', // Using equipment_id for serial
+    equipment_id: calibration?.equipment_id || '', // Auto-generated ID
+    serial_number: calibration?.serial_number || '', // Manufacturer serial
+    equipment_model: calibration?.equipment_name || '', // Model name
     equipment_type: calibration?.equipment_type || '',
     calibration_date: calibration?.calibration_date || '',
     expiration_date: calibration?.expiration_date || '',
@@ -30,7 +31,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
     }
   };
 
-  const handleGenerateSerial = async () => {
+  const handleGenerateId = async () => {
     if (!formData.equipment_type) {
       alert('Please select an equipment type first');
       return;
@@ -41,11 +42,11 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
       const res = await equipmentTypesAPI.generateId(formData.equipment_type);
       setFormData(prev => ({
         ...prev,
-        equipment_serial: res.data.equipment_id
+        equipment_id: res.data.equipment_id
       }));
     } catch (error) {
-      console.error('Error generating serial number:', error);
-      alert('Failed to generate serial number');
+      console.error('Error generating equipment ID:', error);
+      alert('Failed to generate equipment ID');
     } finally {
       setGeneratingId(false);
     }
@@ -58,9 +59,9 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
     try {
       const formDataToSend = new FormData();
 
-      // Map new field names to existing backend fields
+      formDataToSend.append('equipment_id', formData.equipment_id);
+      formDataToSend.append('serial_number', formData.serial_number);
       formDataToSend.append('equipment_name', formData.equipment_model);
-      formDataToSend.append('equipment_id', formData.equipment_serial);
       formDataToSend.append('equipment_type', formData.equipment_type);
       formDataToSend.append('calibration_date', formData.calibration_date);
       formDataToSend.append('expiration_date', formData.expiration_date);
@@ -127,50 +128,65 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Equipment Type *</label>
+            <select
+              name="equipment_type"
+              className="form-select"
+              value={formData.equipment_type}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select type...</option>
+              {equipmentTypes.map(type => (
+                <option key={type.id} value={type.type_code}>
+                  {type.type_name} ({type.type_code})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-2">
             <div className="form-group">
-              <label className="form-label">Equipment Type *</label>
-              <select
-                name="equipment_type"
-                className="form-select"
-                value={formData.equipment_type}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select type...</option>
-                {equipmentTypes.map(type => (
-                  <option key={type.id} value={type.type_code}>
-                    {type.type_name} ({type.type_code})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Serial Number *</label>
+              <label className="form-label">Equipment ID *</label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
                   type="text"
-                  name="equipment_serial"
+                  name="equipment_id"
                   className="form-input"
-                  value={formData.equipment_serial}
+                  value={formData.equipment_id}
                   onChange={handleChange}
                   required
-                  placeholder="e.g., PT-01, MM-05"
+                  placeholder="e.g., HFG-001, TCM-005"
                   style={{ flex: 1 }}
                 />
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={handleGenerateSerial}
+                  onClick={handleGenerateId}
                   disabled={!formData.equipment_type || generatingId}
-                  title="Auto-generate next serial number"
+                  title="Auto-generate next equipment ID"
                 >
                   <Wand2 size={16} />
                 </button>
               </div>
               <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                Click the wand to auto-generate the next sequential serial number
+                Click the wand to auto-generate based on equipment type
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Serial Number</label>
+              <input
+                type="text"
+                name="serial_number"
+                className="form-input"
+                value={formData.serial_number}
+                onChange={handleChange}
+                placeholder="e.g., SN12345678"
+              />
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                Manufacturer serial number (optional)
               </p>
             </div>
           </div>

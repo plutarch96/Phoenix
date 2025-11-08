@@ -100,6 +100,8 @@ export const analyticsAPI = {
   getAllTags: () => api.get('/analytics/tags'),
   getClientStats: () => api.get('/analytics/clients/stats'),
   getRecentActivity: (limit) => api.get('/analytics/activity/recent', { params: { limit } }),
+  getRecentTests: (limit) => api.get('/analytics/tests/recent', { params: { limit } }),
+  getExpiringSoonCalibrations: () => api.get('/analytics/calibrations/expiring-soon'),
 };
 
 // Equipment Types API

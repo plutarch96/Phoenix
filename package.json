@@ -13,6 +13,7 @@
     "migrate-projects": "node server/db/migrate-projects.js",
     "migrate-client-contacts": "node server/db/migrate-client-contacts.js",
     "migrate-media-categories": "node server/db/migrate-media-categories.js",
+    "migrate-add-serial": "node server/db/migrate-add-serial-number.js",
     "check-db": "node server/db/check-structure.js"
   },
   "keywords": [

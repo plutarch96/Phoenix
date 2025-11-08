@@ -98,6 +98,7 @@ router.post('/', upload.single('pdf'), (req, res) => {
     equipment_name,
     equipment_type,
     equipment_id,
+    serial_number,
     calibration_date,
     expiration_date,
     calibrated_by,
@@ -115,9 +116,9 @@ router.post('/', upload.single('pdf'), (req, res) => {
   const status = new Date(expiration_date) < new Date(today) ? 'expired' : 'valid';
 
   db.run(
-    `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
+    `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
     function(err) {
       if (err) {
         if (err.message.includes('UNIQUE')) {
@@ -138,6 +139,7 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
     equipment_name,
     equipment_type,
     equipment_id,
+    serial_number,
     calibration_date,
     expiration_date,
     calibrated_by,
@@ -155,10 +157,10 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
 
   db.run(
     `UPDATE calibrations
-     SET equipment_name = ?, equipment_type = ?, equipment_id = ?, calibration_date = ?, expiration_date = ?,
+     SET equipment_name = ?, equipment_type = ?, equipment_id = ?, serial_number = ?, calibration_date = ?, expiration_date = ?,
          calibrated_by = ?, pdf_path = ?, status = ?, notes = ?
      WHERE id = ?`,
-    [equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes, id],
+    [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes, id],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });

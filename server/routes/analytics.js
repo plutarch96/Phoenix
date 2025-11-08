@@ -196,4 +196,45 @@ router.get('/activity/recent', (req, res) => {
   );
 });
 
+// Get recent tests only
+router.get('/tests/recent', (req, res) => {
+  const limit = req.query.limit || 5;
+
+  db.all(
+    `SELECT id, title, test_type, status, test_date, created_at
+     FROM tests
+     ORDER BY created_at DESC
+     LIMIT ?`,
+    [limit],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Get calibrations expiring soon (within next 30 days)
+router.get('/calibrations/expiring-soon', (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 30);
+  const future = futureDate.toISOString().split('T')[0];
+
+  db.all(
+    `SELECT id, equipment_name, equipment_id, equipment_type, expiration_date
+     FROM calibrations
+     WHERE expiration_date BETWEEN ? AND ?
+     ORDER BY expiration_date ASC`,
+    [today, future],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(rows);
+    }
+  );
+});
+
 module.exports = router;
