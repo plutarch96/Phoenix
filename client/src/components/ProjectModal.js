@@ -12,15 +12,27 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
 
+  const formatProjectNumber = (value) => {
+    // Remove any non-digit characters
+    const digits = value.replace(/\D/g, '');
+
+    // Limit to 3 digits and pad with zeros
+    const limited = digits.slice(0, 3);
+
+    if (limited.length === 0) return '';
+    return limited.padStart(3, '0');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Ensure client_id is set correctly
+      // Ensure client_id is set correctly and format project number
       const submitData = {
         ...formData,
-        client_id: formData.client_id || client?.id
+        client_id: formData.client_id || client?.id,
+        project_number: formatProjectNumber(formData.project_number)
       };
 
       console.log('Submitting project:', submitData); // Debug log
@@ -43,10 +55,21 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    // Allow only digits for project_number and limit to 3 characters
+    if (name === 'project_number') {
+      const digits = value.replace(/\D/g, '').slice(0, 3);
+      setFormData({
+        ...formData,
+        [name]: digits
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   return (
@@ -68,11 +91,12 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
               className="form-input"
               value={formData.project_number}
               onChange={handleChange}
-              placeholder="e.g., 007"
+              placeholder="e.g., 2, 87, or 120"
+              maxLength="3"
               required
             />
             <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              This will be part of the test ID: {client?.client_number || '###'}-{formData.project_number || '###'}-001
+              3 digits (auto-padded). Will be formatted as: {client?.client_number || '###'}-{formData.project_number ? formatProjectNumber(formData.project_number) : '###'}-XXX
             </small>
           </div>
 

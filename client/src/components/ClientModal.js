@@ -15,17 +15,36 @@ function ClientModal({ client, onClose, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
 
+  const formatClientNumber = (value) => {
+    // Remove any non-digit characters
+    const digits = value.replace(/\D/g, '');
+
+    // Limit to 4 digits max
+    const limited = digits.slice(0, 4);
+
+    // Pad with zeros to 3 or 4 digits
+    if (limited.length === 0) return '';
+    if (limited.length <= 3) return limited.padStart(3, '0');
+    return limited; // 4 digits, no padding needed
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log('Submitting client data:', formData);
+      // Format the client number before submitting
+      const formattedData = {
+        ...formData,
+        client_number: formatClientNumber(formData.client_number)
+      };
+
+      console.log('Submitting client data:', formattedData);
 
       if (client) {
-        await clientsAPI.update(client.id, formData);
+        await clientsAPI.update(client.id, formattedData);
       } else {
-        const response = await clientsAPI.create(formData);
+        const response = await clientsAPI.create(formattedData);
         console.log('Client created:', response.data);
       }
 
@@ -40,10 +59,21 @@ function ClientModal({ client, onClose, onSuccess }) {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    // Allow only digits for client_number and limit to 4 characters
+    if (name === 'client_number') {
+      const digits = value.replace(/\D/g, '').slice(0, 4);
+      setFormData({
+        ...formData,
+        [name]: digits
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   return (
@@ -79,10 +109,11 @@ function ClientModal({ client, onClose, onSuccess }) {
               value={formData.client_number}
               onChange={handleChange}
               required
-              placeholder="e.g., 549"
+              placeholder="e.g., 7, 20, 341, or 1234"
+              maxLength="4"
             />
             <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              This will be used in test IDs: {formData.client_number || '###'}-007-001
+              3-4 digits (auto-padded). Will be formatted as: {formData.client_number ? formatClientNumber(formData.client_number) : '###'}-XXX-XXX
             </small>
           </div>
 

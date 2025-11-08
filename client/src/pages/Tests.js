@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Plus, Search, Filter, Eye } from 'lucide-react';
 import { testsAPI, clientsAPI, analyticsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import TestModal from '../components/TestModal';
 
 function Tests() {
+  const { isClient } = useAuth();
   const [tests, setTests] = useState([]);
   const [clients, setClients] = useState([]);
   const [tags, setTags] = useState([]);
@@ -15,6 +17,11 @@ function Tests() {
     status: '',
     tag: ''
   });
+
+  // Redirect clients to the clients page
+  if (isClient()) {
+    return <Navigate to="/clients" replace />;
+  }
 
   useEffect(() => {
     loadData();
