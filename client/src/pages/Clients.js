@@ -211,7 +211,7 @@ function Clients() {
             left: '1rem',
             top: '50%',
             transform: 'translateY(-50%)',
-            color: '#64748b'
+            color: 'var(--text-secondary)'
           }} />
           <input
             type="text"
@@ -251,7 +251,7 @@ function Clients() {
                     <div>
                       <h3 style={{ margin: 0 }}>{client.name}</h3>
                       {client.client_number && (
-                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                           Client #{client.client_number}
                         </div>
                       )}
@@ -259,7 +259,7 @@ function Clients() {
                   </div>
 
                   {client.contact_email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-secondary)', marginLeft: '44px' }}>
                       <Mail size={16} />
                       <a href={`mailto:${client.contact_email}`} style={{ color: '#3b82f6' }}>
                         {client.contact_email}
@@ -267,7 +267,7 @@ function Clients() {
                     </div>
                   )}
                   {client.contact_phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginLeft: '44px' }}>
                       <Phone size={16} />
                       <span>{client.contact_phone}</span>
                     </div>
@@ -276,7 +276,7 @@ function Clients() {
 
                 {/* Expanded Projects Section */}
                 {expandedClients[client.id] && (
-                  <div style={{ marginTop: '1.5rem', marginLeft: '44px', borderLeft: '2px solid #e2e8f0', paddingLeft: '1rem' }}>
+                  <div style={{ marginTop: '1.5rem', marginLeft: '44px', borderLeft: '2px solid var(--border-color)', paddingLeft: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
                         Projects ({projects[client.id]?.length || 0})
@@ -297,9 +297,9 @@ function Clients() {
                         {projects[client.id].map(project => (
                           <div key={project.id} style={{
                             padding: '1rem',
-                            background: '#f8fafc',
+                            background: 'var(--bg-tertiary)',
                             borderRadius: '8px',
-                            border: '1px solid #e2e8f0'
+                            border: '1px solid var(--border-color)'
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <FolderOpen size={18} color="#3b82f6" />
@@ -310,19 +310,19 @@ function Clients() {
                                 {project.status}
                               </span>
                             </div>
-                            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                               Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
                             </div>
                             {project.description && (
-                              <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
+                              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                 {project.description}
                               </p>
                             )}
 
                             {/* Show tests in project */}
                             {project.tests && project.tests.length > 0 && (
-                              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                                <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>
+                              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                                <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-tertiary)' }}>
                                   Tests ({project.tests.length}):
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -335,17 +335,17 @@ function Clients() {
                                         flexDirection: 'column',
                                         gap: '0.25rem',
                                         padding: '0.75rem',
-                                        background: 'white',
+                                        background: 'var(--bg-secondary)',
                                         borderRadius: '4px',
                                         textDecoration: 'none',
                                         color: 'inherit',
-                                        border: '1px solid #e2e8f0',
+                                        border: '1px solid var(--border-color)',
                                         transition: 'all 0.2s'
                                       }}
                                       className="hover-lift"
                                     >
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <FileText size={14} color="#64748b" />
+                                        <FileText size={14} style={{ color: 'var(--text-secondary)' }} />
                                         <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#3b82f6' }}>
                                           {getTestId(client, project, test)}
                                         </span>
@@ -353,10 +353,10 @@ function Clients() {
                                           {test.status}
                                         </span>
                                       </div>
-                                      <div style={{ fontSize: '0.875rem', color: '#1e293b', fontWeight: 500 }}>
+                                      <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
                                         {test.title}
                                       </div>
-                                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
+                                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                         {test.test_type && (
                                           <span>Type: {test.test_type}</span>
                                         )}
@@ -375,7 +375,7 @@ function Clients() {
 
                             {/* Project Actions */}
                             {!isClient() && (
-                              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                 <button
                                   className="btn btn-secondary btn-sm"
                                   onClick={() => {
@@ -400,7 +400,7 @@ function Clients() {
                         ))}
                       </div>
                     ) : (
-                      <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                         <FolderOpen size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
                         <p style={{ margin: 0, fontSize: '0.875rem' }}>No projects yet</p>
                       </div>
@@ -410,7 +410,7 @@ function Clients() {
 
                 {/* Client Actions */}
                 {!isClient() && (
-                  <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDeleteClient(client.id)}
