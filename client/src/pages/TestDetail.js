@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -18,7 +18,7 @@ import {
   Eye
 } from 'lucide-react';
 import { testsAPI, mediaAPI, calibrationsAPI, clientsAPI, reportsAPI } from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
@@ -30,7 +30,7 @@ import ReportPreview from '../components/ReportPreview';
 function TestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isFRAEmployee } = useContext(AuthContext);
+  const { user, isFRAEmployee } = useAuth();
   const toast = useToast();
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);

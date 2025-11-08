@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Tag, Trash2, Search as SearchIcon, X } from 'lucide-react';
 import { testsAPI } from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 function MyTests() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const toast = useToast();
   const [tests, setTests] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
