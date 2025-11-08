@@ -33,18 +33,25 @@ function Clients() {
 
   const loadProjectsForClient = async (clientId, forceReload = false) => {
     if (projects[clientId] && !forceReload) {
-      // Already loaded, skip unless forced
+      console.log(`Projects already loaded for client ${clientId}, skipping (use forceReload to refresh)`);
       return;
     }
 
     try {
+      console.log(`Loading projects for client ${clientId}...`);
       const res = await projectsAPI.getAll({ client_id: clientId });
-      setProjects(prev => ({
-        ...prev,
-        [clientId]: res.data
-      }));
+      console.log(`Loaded ${res.data.length} projects for client ${clientId}:`, res.data);
+      setProjects(prev => {
+        const updated = {
+          ...prev,
+          [clientId]: res.data
+        };
+        console.log('Updated projects state:', updated);
+        return updated;
+      });
     } catch (error) {
       console.error('Error loading projects:', error);
+      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -96,7 +103,8 @@ function Clients() {
     loadClients();
   };
 
-  const handleProjectSaved = () => {
+  const handleProjectSaved = async () => {
+    console.log('Project saved! Refreshing projects for client:', selectedClient?.id);
     setShowProjectModal(false);
     if (selectedClient) {
       // Auto-expand the client
@@ -104,8 +112,11 @@ function Clients() {
         ...prev,
         [selectedClient.id]: true
       }));
-      // Force reload to show newly created project
-      loadProjectsForClient(selectedClient.id, true);
+      // Wait a moment for database to settle, then force reload
+      setTimeout(async () => {
+        console.log('Force reloading projects after delay...');
+        await loadProjectsForClient(selectedClient.id, true);
+      }, 300);
     }
     setSelectedProject(null);
   };
