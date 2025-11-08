@@ -170,7 +170,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
                   <Wand2 size={16} />
                 </button>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                 Click the wand to auto-generate based on equipment type
               </p>
             </div>
@@ -185,7 +185,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
                 onChange={handleChange}
                 placeholder="e.g., SN12345678"
               />
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                 Manufacturer serial number (optional)
               </p>
             </div>
@@ -215,7 +215,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
                 onChange={handleChange}
                 required
               />
-              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                 Due date will be auto-calculated (+1 year)
               </p>
             </div>
@@ -230,7 +230,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
                 onChange={handleChange}
                 required
               />
-              <p style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--icon-green)', marginTop: '0.25rem' }}>
                 {formData.expiration_date ? '✓ Calculated automatically' : 'Set calibration date first'}
               </p>
             </div>
@@ -270,12 +270,12 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
                 style={{ flex: 1 }}
               />
               {pdfFile && (
-                <span style={{ color: '#10b981', fontSize: '0.875rem' }}>
+                <span style={{ color: 'var(--icon-green)', fontSize: '0.875rem' }}>
                   ✓ {pdfFile.name}
                 </span>
               )}
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
               Upload the calibration certificate PDF (max 10MB)
             </p>
           </div>

@@ -142,7 +142,7 @@ function TestStream({ testId, testTitle }) {
       {!isStreaming && (
         <div style={{ marginTop: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', fontSize: '0.875rem' }}>
           <strong>OBS Streaming Instructions:</strong>
-          <ol style={{ marginLeft: '1.25rem', marginTop: '0.5rem', color: '#64748b', lineHeight: '1.6', marginBottom: 0 }}>
+          <ol style={{ marginLeft: '1.25rem', marginTop: '0.5rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: 0 }}>
             <li>Open OBS Studio and configure your scene</li>
             <li>Go to Settings → Stream → Select "Custom"</li>
             <li>Server URL: <code style={{ background: '#e5e7eb', padding: '0.125rem 0.375rem', borderRadius: '4px', fontSize: '0.8rem' }}>http://localhost:5000</code></li>

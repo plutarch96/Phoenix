@@ -38,7 +38,7 @@ function ConfirmDialog({ title, message, onConfirm, onCancel, confirmText = 'Yes
           </button>
         </div>
 
-        <div style={{ padding: '1.5rem', fontSize: '1rem', color: '#1e293b' }}>
+        <div style={{ padding: '1.5rem', fontSize: '1rem', color: 'var(--text-primary)' }}>
           {message}
         </div>
 

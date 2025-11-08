@@ -71,7 +71,7 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
               placeholder="e.g., 007"
               required
             />
-            <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
+            <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
               This will be part of the test ID: {client?.client_number || '###'}-{formData.project_number || '###'}-001
             </small>
           </div>
