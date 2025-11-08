@@ -96,13 +96,16 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       equipment_name TEXT NOT NULL,
       equipment_type TEXT NOT NULL,
-      equipment_id TEXT UNIQUE NOT NULL,
+      equipment_id TEXT NOT NULL,
+      serial_number TEXT,
       calibration_date DATE NOT NULL,
       expiration_date DATE NOT NULL,
       calibrated_by TEXT,
       pdf_path TEXT,
       status TEXT DEFAULT 'valid',
       notes TEXT,
+      is_active INTEGER DEFAULT 1,
+      superseded_by INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
