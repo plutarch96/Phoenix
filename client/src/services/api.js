@@ -121,6 +121,7 @@ export const equipmentTypesAPI = {
 // Search API (global search)
 export const searchAPI = {
   global: (query) => api.get('/search', { params: { q: query } }),
+  media: (query) => api.get('/search/media', { params: { q: query } }),
 };
 
 // Reports API

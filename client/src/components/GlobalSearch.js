@@ -60,6 +60,18 @@ function GlobalSearch() {
     setShowResults(false);
   };
 
+  const handleSeeAllResults = () => {
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+    setQuery('');
+    setShowResults(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && query.trim().length >= 2) {
+      handleSeeAllResults();
+    }
+  };
+
   const totalResults = results.tests.length + results.calibrations.length +
                        results.clients.length + results.projects.length;
 
@@ -87,6 +99,7 @@ function GlobalSearch() {
           placeholder="Search tests, clients, projects, equipment..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
         {query && (
           <button
@@ -268,6 +281,24 @@ function GlobalSearch() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {totalResults > 0 && (
+                <div
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderTop: '1px solid var(--border)',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    background: 'var(--bg-secondary)'
+                  }}
+                  onClick={handleSeeAllResults}
+                  className="search-result-item"
+                >
+                  <div style={{ fontWeight: 500, color: 'var(--color-primary)' }}>
+                    See all {totalResults} result{totalResults !== 1 ? 's' : ''} →
+                  </div>
                 </div>
               )}
             </>

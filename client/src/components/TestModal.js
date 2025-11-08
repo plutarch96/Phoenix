@@ -3,12 +3,17 @@ import { X } from 'lucide-react';
 import { testsAPI } from '../services/api';
 
 function TestModal({ test, clients, onClose, onSuccess }) {
+  // Determine if location is a preset or custom
+  const presetLocations = ['Rockville', 'York', 'Cambridge'];
+  const isPresetLocation = test?.location && presetLocations.includes(test.location);
+
   const [formData, setFormData] = useState({
     title: test?.title || '',
     description: test?.description || '',
     test_type: test?.test_type || '',
     governing_standard: test?.governing_standard || '',
-    location: test?.location || '',
+    location: isPresetLocation ? test.location : (test?.location ? 'Other' : ''),
+    customLocation: isPresetLocation || !test?.location ? '' : test.location,
     client_id: test?.client_id || '',
     test_date: test?.test_date || '',
     status: test?.status || 'pending',
@@ -23,9 +28,13 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     try {
       const data = {
         ...formData,
+        location: formData.location === 'Other' ? formData.customLocation : formData.location,
         client_id: formData.client_id || null, // Convert empty string to null
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
       };
+
+      // Remove customLocation from data as it's not a database field
+      delete data.customLocation;
 
       if (test) {
         await testsAPI.update(test.id, data);
@@ -120,15 +129,33 @@ function TestModal({ test, clients, onClose, onSuccess }) {
 
           <div className="form-group">
             <label className="form-label">Location</label>
-            <input
-              type="text"
+            <select
               name="location"
-              className="form-input"
+              className="form-select"
               value={formData.location}
               onChange={handleChange}
-              placeholder="e.g., Lab A, Building 3, Maryland Facility"
-            />
+            >
+              <option value="">Select location</option>
+              <option value="Rockville">Rockville</option>
+              <option value="York">York</option>
+              <option value="Cambridge">Cambridge</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
+
+          {formData.location === 'Other' && (
+            <div className="form-group">
+              <label className="form-label">Custom Location</label>
+              <input
+                type="text"
+                name="customLocation"
+                className="form-input"
+                value={formData.customLocation}
+                onChange={handleChange}
+                placeholder="Enter custom location"
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Client</label>

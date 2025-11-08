@@ -24,6 +24,7 @@ import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
 import UsersPage from './pages/Users';
 import AuditLog from './pages/AuditLog';
+import SearchResults from './pages/SearchResults';
 import GlobalSearch from './components/GlobalSearch';
 import ThemeToggle from './components/ThemeToggle';
 import Toast from './components/Toast';
@@ -162,6 +163,7 @@ function MainApp() {
           <Route path="/clients" element={<Clients />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/audit" element={<AuditLog />} />
+          <Route path="/search" element={<SearchResults />} />
         </Routes>
       </main>
       <Toast />
