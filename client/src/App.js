@@ -24,6 +24,7 @@ import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
 import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import UsersPage from './pages/Users';
 import AuditLog from './pages/AuditLog';
 import SearchResults from './pages/SearchResults';
@@ -165,6 +166,7 @@ function MainApp() {
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/audit" element={<AuditLog />} />
           <Route path="/search" element={<SearchResults />} />

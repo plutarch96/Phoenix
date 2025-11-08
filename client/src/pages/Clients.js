@@ -303,9 +303,11 @@ function Clients() {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <FolderOpen size={18} color="#3b82f6" />
-                              <h4 style={{ margin: 0, fontSize: '1rem' }}>
-                                {project.project_name}
-                              </h4>
+                              <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                                <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                  {project.project_name}
+                                </h4>
+                              </Link>
                               <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
                                 {project.status}
                               </span>
