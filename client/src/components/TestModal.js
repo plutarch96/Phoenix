@@ -6,6 +6,8 @@ function TestModal({ test, clients, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     title: test?.title || '',
     description: test?.description || '',
+    test_type: test?.test_type || '',
+    governing_standard: test?.governing_standard || '',
     client_id: test?.client_id || '',
     test_date: test?.test_date || '',
     status: test?.status || 'pending',
@@ -77,6 +79,32 @@ function TestModal({ test, clients, onClose, onSuccess }) {
               onChange={handleChange}
               rows="4"
             />
+          </div>
+
+          <div className="grid grid-2">
+            <div className="form-group">
+              <label className="form-label">Test Type</label>
+              <input
+                type="text"
+                name="test_type"
+                className="form-input"
+                value={formData.test_type}
+                onChange={handleChange}
+                placeholder="e.g., Fire Resistance, Smoke Development"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Governing Standard</label>
+              <input
+                type="text"
+                name="governing_standard"
+                className="form-input"
+                value={formData.governing_standard}
+                onChange={handleChange}
+                placeholder="e.g., ASTM E119, UL 263"
+              />
+            </div>
           </div>
 
           <div className="form-group">

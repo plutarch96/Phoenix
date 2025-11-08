@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { X, Upload } from 'lucide-react';
-import { calibrationsAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { X, Wand2 } from 'lucide-react';
+import { calibrationsAPI, equipmentTypesAPI } from '../services/api';
 
 function CalibrationModal({ calibration, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     equipment_name: calibration?.equipment_name || '',
+    equipment_type: calibration?.equipment_type || '',
     equipment_id: calibration?.equipment_id || '',
     calibration_date: calibration?.calibration_date || '',
     expiration_date: calibration?.expiration_date || '',
@@ -13,6 +14,42 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
   });
   const [pdfFile, setPdfFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [equipmentTypes, setEquipmentTypes] = useState([]);
+  const [generatingId, setGeneratingId] = useState(false);
+
+  useEffect(() => {
+    loadEquipmentTypes();
+  }, []);
+
+  const loadEquipmentTypes = async () => {
+    try {
+      const res = await equipmentTypesAPI.getAll();
+      setEquipmentTypes(res.data);
+    } catch (error) {
+      console.error('Error loading equipment types:', error);
+    }
+  };
+
+  const handleGenerateId = async () => {
+    if (!formData.equipment_type) {
+      alert('Please select an equipment type first');
+      return;
+    }
+
+    setGeneratingId(true);
+    try {
+      const res = await equipmentTypesAPI.generateId(formData.equipment_type);
+      setFormData(prev => ({
+        ...prev,
+        equipment_id: res.data.equipment_id
+      }));
+    } catch (error) {
+      console.error('Error generating ID:', error);
+      alert('Failed to generate equipment ID');
+    } finally {
+      setGeneratingId(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +110,54 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
         </div>
 
         <form onSubmit={handleSubmit}>
+          <div className="grid grid-2">
+            <div className="form-group">
+              <label className="form-label">Equipment Type *</label>
+              <select
+                name="equipment_type"
+                className="form-select"
+                value={formData.equipment_type}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select type...</option>
+                {equipmentTypes.map(type => (
+                  <option key={type.id} value={type.type_code}>
+                    {type.type_name} ({type.type_code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Equipment ID *</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  name="equipment_id"
+                  className="form-input"
+                  value={formData.equipment_id}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g., PT-01, MM-05"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleGenerateId}
+                  disabled={!formData.equipment_type || generatingId}
+                  title="Auto-generate next ID"
+                >
+                  <Wand2 size={16} />
+                </button>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                Click the wand to auto-generate the next sequential ID
+              </p>
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label">Equipment Name *</label>
             <input
@@ -82,19 +167,7 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
               value={formData.equipment_name}
               onChange={handleChange}
               required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Equipment ID *</label>
-            <input
-              type="text"
-              name="equipment_id"
-              className="form-input"
-              value={formData.equipment_id}
-              onChange={handleChange}
-              required
-              placeholder="Unique identifier for the equipment"
+              placeholder="e.g., Omega Type-K Thermocouple"
             />
           </div>
 
