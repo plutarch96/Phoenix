@@ -140,16 +140,16 @@ router.get('/:id', (req, res) => {
 
 // Create new test
 router.post('/', (req, res) => {
-  const { title, description, test_type, governing_standard, client_id, test_date, status, tags } = req.body;
+  const { title, description, test_type, governing_standard, location, client_id, test_date, status, tags } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
   }
 
   db.run(
-    `INSERT INTO tests (title, description, test_type, governing_standard, client_id, test_date, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [title, description, test_type, governing_standard, client_id, test_date, status || 'pending'],
+    `INSERT INTO tests (title, description, test_type, governing_standard, location, client_id, test_date, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [title, description, test_type, governing_standard, location, client_id, test_date, status || 'pending'],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -174,13 +174,13 @@ router.post('/', (req, res) => {
 // Update test
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const { title, description, test_type, governing_standard, client_id, test_date, status, tags } = req.body;
+  const { title, description, test_type, governing_standard, location, client_id, test_date, status, tags } = req.body;
 
   db.run(
     `UPDATE tests
-     SET title = ?, description = ?, test_type = ?, governing_standard = ?, client_id = ?, test_date = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+     SET title = ?, description = ?, test_type = ?, governing_standard = ?, location = ?, client_id = ?, test_date = ?, status = ?, updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
-    [title, description, test_type, governing_standard, client_id, test_date, status, id],
+    [title, description, test_type, governing_standard, location, client_id, test_date, status, id],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });

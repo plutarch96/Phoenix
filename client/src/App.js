@@ -1,16 +1,18 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Home,
   TestTube,
   Settings,
   Users,
   Video,
-  BarChart3,
-  FileText,
-  Flame
+  Flame,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tests from './pages/Tests';
 import TestDetail from './pages/TestDetail';
@@ -20,8 +22,28 @@ import StreamViewer from './pages/StreamViewer';
 import GlobalSearch from './components/GlobalSearch';
 import './App.css';
 
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh'
+      }}>
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  return user ? children : <Navigate to="/login" />;
+}
+
 function Navigation() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
@@ -35,7 +57,7 @@ function Navigation() {
     <nav className="sidebar">
       <div className="sidebar-header">
         <Flame size={32} />
-        <h1>Fire Lab</h1>
+        <h1>FRA Lab</h1>
       </div>
       <ul className="nav-menu">
         {navItems.map((item) => {
@@ -54,39 +76,98 @@ function Navigation() {
           );
         })}
       </ul>
+
+      {/* User Info and Logout */}
+      {user && (
+        <div style={{
+          marginTop: 'auto',
+          padding: '1rem 1.5rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: '0.875rem'
+          }}>
+            <UserIcon size={16} />
+            <div>
+              <div style={{ fontWeight: 600 }}>{user.username}</div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                {user.role === 'admin' ? 'Administrator' :
+                 user.role === 'employee' ? 'FRA Employee' : 'Client'}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="nav-item"
+            style={{
+              width: '100%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0.75rem',
+              borderRadius: '6px'
+            }}
+          >
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
+        </div>
+      )}
     </nav>
+  );
+}
+
+function MainApp() {
+  const { user } = useAuth();
+
+  return (
+    <div className="app">
+      <Navigation />
+      <main className="main-content">
+        <div style={{
+          padding: '1rem 2rem',
+          background: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <h3 style={{ margin: 0, color: '#1e293b' }}>
+            Fire & Risk Alliance Laboratory
+          </h3>
+          <GlobalSearch />
+        </div>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/tests" element={<Tests />} />
+          <Route path="/tests/:id" element={<TestDetail />} />
+          <Route path="/calibrations" element={<Calibrations />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/stream" element={<StreamViewer />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
 function App() {
   return (
     <Router>
-      <div className="app">
-        <Navigation />
-        <main className="main-content">
-          <div style={{
-            padding: '1rem 2rem',
-            background: 'white',
-            borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <h3 style={{ margin: 0, color: '#1e293b' }}>
-              FRA Lab - Fire Research & Analysis
-            </h3>
-            <GlobalSearch />
-          </div>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tests" element={<Tests />} />
-            <Route path="/tests/:id" element={<TestDetail />} />
-            <Route path="/calibrations" element={<Calibrations />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/stream" element={<StreamViewer />} />
-          </Routes>
-        </main>
-      </div>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/*" element={
+            <PrivateRoute>
+              <MainApp />
+            </PrivateRoute>
+          } />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }

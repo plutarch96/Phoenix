@@ -8,6 +8,7 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     description: test?.description || '',
     test_type: test?.test_type || '',
     governing_standard: test?.governing_standard || '',
+    location: test?.location || '',
     client_id: test?.client_id || '',
     test_date: test?.test_date || '',
     status: test?.status || 'pending',
@@ -105,6 +106,18 @@ function TestModal({ test, clients, onClose, onSuccess }) {
                 placeholder="e.g., ASTM E119, UL 263"
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Location</label>
+            <input
+              type="text"
+              name="location"
+              className="form-input"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="e.g., Lab A, Building 3, Maryland Facility"
+            />
           </div>
 
           <div className="form-group">
