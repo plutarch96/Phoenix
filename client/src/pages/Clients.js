@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2 } from 'lucide-react';
+import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clientsAPI, projectsAPI } from '../services/api';
 import ClientModal from '../components/ClientModal';
@@ -14,6 +14,7 @@ function Clients() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadClients();
@@ -30,9 +31,9 @@ function Clients() {
     }
   };
 
-  const loadProjectsForClient = async (clientId) => {
-    if (projects[clientId]) {
-      // Already loaded
+  const loadProjectsForClient = async (clientId, forceReload = false) => {
+    if (projects[clientId] && !forceReload) {
+      // Already loaded, skip unless forced
       return;
     }
 
@@ -98,7 +99,8 @@ function Clients() {
   const handleProjectSaved = () => {
     setShowProjectModal(false);
     if (selectedClient) {
-      loadProjectsForClient(selectedClient.id);
+      // Force reload to show newly created project
+      loadProjectsForClient(selectedClient.id, true);
     }
     setSelectedProject(null);
   };
@@ -116,6 +118,31 @@ function Clients() {
     return `${clientNum}-${projectNum}-${testNum}`;
   };
 
+  // Filter clients and projects based on search query
+  const filteredClients = clients.filter(client => {
+    const query = searchQuery.toLowerCase();
+    if (!query) return true;
+
+    // Search in client fields
+    const matchesClient =
+      client.name?.toLowerCase().includes(query) ||
+      client.client_number?.toLowerCase().includes(query) ||
+      client.contact_email?.toLowerCase().includes(query) ||
+      client.contact_phone?.toLowerCase().includes(query);
+
+    if (matchesClient) return true;
+
+    // Search in projects for this client
+    const clientProjects = projects[client.id] || [];
+    const matchesProject = clientProjects.some(project =>
+      project.project_name?.toLowerCase().includes(query) ||
+      project.project_number?.toLowerCase().includes(query) ||
+      project.description?.toLowerCase().includes(query)
+    );
+
+    return matchesProject;
+  });
+
   return (
     <div className="page">
       <div className="page-header">
@@ -129,15 +156,38 @@ function Clients() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={20} style={{
+            position: 'absolute',
+            left: '1rem',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#64748b'
+          }} />
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Search clients, projects, client numbers, project numbers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: '3rem' }}
+          />
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">All Clients ({clients.length})</h3>
+          <h3 className="card-title">
+            {searchQuery ? `Found ${filteredClients.length} client(s)` : `All Clients (${clients.length})`}
+          </h3>
         </div>
         {loading ? (
           <div className="loading">Loading clients...</div>
-        ) : clients.length > 0 ? (
+        ) : filteredClients.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {clients.map(client => (
+            {filteredClients.map(client => (
               <div key={client.id} className="card" style={{ margin: 0 }}>
                 {/* Client Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -306,12 +356,18 @@ function Clients() {
         ) : (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <UsersIcon size={48} />
+              {searchQuery ? <Search size={48} /> : <UsersIcon size={48} />}
             </div>
-            <p>No clients yet</p>
-            <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
-              Add Your First Client
-            </button>
+            <p>{searchQuery ? `No results found for "${searchQuery}"` : 'No clients yet'}</p>
+            {searchQuery ? (
+              <button className="btn btn-secondary" onClick={() => setSearchQuery('')}>
+                Clear Search
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
+                Add Your First Client
+              </button>
+            )}
           </div>
         )}
       </div>
