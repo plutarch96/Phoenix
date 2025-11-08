@@ -87,23 +87,44 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Socket.IO for OBS video streaming
+// Socket.IO for OBS video streaming (test-specific rooms)
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  // Handle OBS stream data
+  // Join a test-specific room
+  socket.on('join-test-stream', (testId) => {
+    const roomName = `test-${testId}`;
+    socket.join(roomName);
+    console.log(`Client ${socket.id} joined room: ${roomName}`);
+    socket.emit('joined-room', { testId, room: roomName });
+  });
+
+  // Leave a test-specific room
+  socket.on('leave-test-stream', (testId) => {
+    const roomName = `test-${testId}`;
+    socket.leave(roomName);
+    console.log(`Client ${socket.id} left room: ${roomName}`);
+  });
+
+  // Handle OBS stream data for a specific test
   socket.on('obs-stream', (data) => {
-    // Broadcast to all connected clients except sender
-    socket.broadcast.emit('video-stream', data);
+    const { testId, streamData } = data;
+    const roomName = `test-${testId}`;
+    // Broadcast to all clients in this test's room except sender
+    socket.to(roomName).emit('video-stream', streamData);
   });
 
-  // Handle stream control
-  socket.on('start-stream', () => {
-    socket.broadcast.emit('stream-started');
+  // Handle stream control for a specific test
+  socket.on('start-stream', (testId) => {
+    const roomName = `test-${testId}`;
+    socket.to(roomName).emit('stream-started');
+    console.log(`Stream started for test ${testId}`);
   });
 
-  socket.on('stop-stream', () => {
-    socket.broadcast.emit('stream-stopped');
+  socket.on('stop-stream', (testId) => {
+    const roomName = `test-${testId}`;
+    socket.to(roomName).emit('stream-stopped');
+    console.log(`Stream stopped for test ${testId}`);
   });
 
   socket.on('disconnect', () => {

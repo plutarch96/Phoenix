@@ -5,7 +5,6 @@ import {
   TestTube,
   Settings,
   Users,
-  Video,
   Flame,
   LogOut,
   User as UserIcon
@@ -18,7 +17,6 @@ import Tests from './pages/Tests';
 import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
-import StreamViewer from './pages/StreamViewer';
 import GlobalSearch from './components/GlobalSearch';
 import './App.css';
 
@@ -50,7 +48,6 @@ function Navigation() {
     { path: '/tests', icon: TestTube, label: 'Tests' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
-    { path: '/stream', icon: Video, label: 'Live Stream' },
   ];
 
   return (
@@ -148,7 +145,6 @@ function MainApp() {
           <Route path="/tests/:id" element={<TestDetail />} />
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
-          <Route path="/stream" element={<StreamViewer />} />
         </Routes>
       </main>
     </div>

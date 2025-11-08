@@ -17,6 +17,7 @@ import {
 import { testsAPI, mediaAPI, calibrationsAPI } from '../services/api';
 import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
+import TestStream from '../components/TestStream';
 
 function TestDetail() {
   const { id } = useParams();
@@ -296,7 +297,10 @@ function TestDetail() {
         </div>
       </div>
 
-      {/* 2. TEST DATA */}
+      {/* 2. LIVE STREAM */}
+      <TestStream testId={id} testTitle={test.title} />
+
+      {/* 3. TEST DATA */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -331,7 +335,7 @@ function TestDetail() {
         )}
       </div>
 
-      {/* 3. MEDIA (Images & Videos) */}
+      {/* 4. MEDIA (Images & Videos) */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -387,7 +391,7 @@ function TestDetail() {
         )}
       </div>
 
-      {/* 4. CALIBRATION DOCUMENTS */}
+      {/* 5. CALIBRATION DOCUMENTS */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
@@ -487,7 +491,7 @@ function TestDetail() {
         )}
       </div>
 
-      {/* 5. OTHER DOCUMENTS */}
+      {/* 6. OTHER DOCUMENTS */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
