@@ -7,7 +7,8 @@ import {
   Users,
   Video,
   BarChart3,
-  FileText
+  FileText,
+  Flame
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -16,6 +17,7 @@ import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
 import StreamViewer from './pages/StreamViewer';
+import GlobalSearch from './components/GlobalSearch';
 import './App.css';
 
 function Navigation() {
@@ -32,8 +34,8 @@ function Navigation() {
   return (
     <nav className="sidebar">
       <div className="sidebar-header">
-        <BarChart3 size={32} />
-        <h1>Test Tracker</h1>
+        <Flame size={32} />
+        <h1>Fire Lab</h1>
       </div>
       <ul className="nav-menu">
         {navItems.map((item) => {
@@ -62,6 +64,19 @@ function App() {
       <div className="app">
         <Navigation />
         <main className="main-content">
+          <div style={{
+            padding: '1rem 2rem',
+            background: 'white',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <h3 style={{ margin: 0, color: '#1e293b' }}>
+              Maryland Fire Testing Laboratory
+            </h3>
+            <GlobalSearch />
+          </div>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/tests" element={<Tests />} />
