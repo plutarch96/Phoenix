@@ -4,6 +4,7 @@ const db = require('../db/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const archiver = require('archiver');
 
 // Configure multer for media uploads
 const storage = multer.diskStorage({
@@ -59,17 +60,45 @@ router.get('/test/:test_id/type/:media_type', (req, res) => {
   );
 });
 
+// File type validation per category
+const validateFileType = (filename, category) => {
+  const ext = path.extname(filename).toLowerCase();
+
+  const allowedTypes = {
+    test_data: ['.csv', '.xlsx', '.xls', '.json', '.txt', '.dat'],
+    media: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.mp4', '.avi', '.mov', '.mkv', '.webm'],
+    calibration: ['.pdf'],
+    other: ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png']
+  };
+
+  return allowedTypes[category]?.includes(ext) || false;
+};
+
 // Upload media file(s)
 router.post('/upload', upload.array('files', 10), (req, res) => {
-  const { test_id, media_type, description } = req.body;
+  const { test_id, category, description } = req.body;
+
+  console.log('[MEDIA] Upload request:', { test_id, category, files: req.files?.length });
 
   if (!test_id || !req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Test ID and files are required' });
   }
 
+  if (!category) {
+    return res.status(400).json({ error: 'Category is required (test_data, media, calibration, other)' });
+  }
+
+  // Validate file types
+  const invalidFiles = req.files.filter(file => !validateFileType(file.originalname, category));
+  if (invalidFiles.length > 0) {
+    return res.status(400).json({
+      error: `Invalid file types for category '${category}': ${invalidFiles.map(f => f.originalname).join(', ')}`
+    });
+  }
+
   const stmt = db.prepare(
-    `INSERT INTO test_media (test_id, media_type, file_name, file_path, file_size, description)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO test_media (test_id, media_type, category, file_name, file_path, file_size, description)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
 
   const uploadedFiles = [];
@@ -77,36 +106,37 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   req.files.forEach(file => {
     const filePath = `/uploads/tests/${file.filename}`;
 
-    // Determine media type from file extension if not provided
-    let type = media_type;
-    if (!type) {
-      const ext = path.extname(file.originalname).toLowerCase();
-      if (['.jpg', '.jpeg', '.png', '.gif', '.bmp'].includes(ext)) {
-        type = 'image';
-      } else if (['.mp4', '.avi', '.mov', '.mkv', '.webm'].includes(ext)) {
-        type = 'video';
-      } else {
-        type = 'datafile';
-      }
+    // Determine media_type from file extension
+    const ext = path.extname(file.originalname).toLowerCase();
+    let mediaType = 'document';
+    if (['.jpg', '.jpeg', '.png', '.gif', '.bmp'].includes(ext)) {
+      mediaType = 'image';
+    } else if (['.mp4', '.avi', '.mov', '.mkv', '.webm'].includes(ext)) {
+      mediaType = 'video';
+    } else if (ext === '.pdf') {
+      mediaType = 'pdf';
     }
 
     stmt.run(
       test_id,
-      type,
+      mediaType,
+      category,
       file.originalname,
       filePath,
       file.size,
       description || null,
       function(err) {
         if (err) {
-          console.error('Error inserting media:', err);
+          console.error('[MEDIA] Error inserting media:', err);
         } else {
           uploadedFiles.push({
             id: this.lastID,
             file_name: file.originalname,
             file_path: filePath,
-            media_type: type
+            media_type: mediaType,
+            category: category
           });
+          console.log('[MEDIA] File uploaded:', file.originalname, 'category:', category);
         }
       }
     );
@@ -136,6 +166,101 @@ router.put('/:id', (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       res.json({ message: 'Media updated successfully' });
+    }
+  );
+});
+
+// Download individual file
+router.get('/download/:id', (req, res) => {
+  const { id } = req.params;
+
+  db.get('SELECT * FROM test_media WHERE id = ?', [id], (err, media) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (!media) {
+      return res.status(404).json({ error: 'Media not found' });
+    }
+
+    const filePath = path.join(__dirname, '..', media.file_path);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    console.log('[MEDIA] Downloading file:', media.file_name);
+    res.download(filePath, media.file_name);
+  });
+});
+
+// Download all files from a category as ZIP
+router.get('/test/:test_id/download-category/:category', (req, res) => {
+  const { test_id, category } = req.params;
+
+  console.log('[MEDIA] Zip download request for test', test_id, 'category:', category);
+
+  db.all(
+    'SELECT * FROM test_media WHERE test_id = ? AND category = ?',
+    [test_id, category],
+    (err, files) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (!files || files.length === 0) {
+        return res.status(404).json({ error: 'No files found for this category' });
+      }
+
+      // Create zip archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+
+      // Set response headers
+      res.attachment(`test-${test_id}-${category}.zip`);
+      res.setHeader('Content-Type', 'application/zip');
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add files to archive
+      let filesAdded = 0;
+      files.forEach(file => {
+        const filePath = path.join(__dirname, '..', file.file_path);
+        if (fs.existsSync(filePath)) {
+          archive.file(filePath, { name: file.file_name });
+          filesAdded++;
+        } else {
+          console.error('[MEDIA] File not found:', filePath);
+        }
+      });
+
+      console.log('[MEDIA] Adding', filesAdded, 'files to zip');
+
+      // Finalize archive
+      archive.finalize();
+
+      archive.on('error', (err) => {
+        console.error('[MEDIA] Archive error:', err);
+        res.status(500).json({ error: 'Error creating archive' });
+      });
+    }
+  );
+});
+
+// Get media by category
+router.get('/test/:test_id/category/:category', (req, res) => {
+  const { test_id, category } = req.params;
+
+  db.all(
+    'SELECT * FROM test_media WHERE test_id = ? AND category = ? ORDER BY uploaded_at DESC',
+    [test_id, category],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(rows);
     }
   );
 });
