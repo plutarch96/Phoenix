@@ -186,7 +186,9 @@ function Projects() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        <h3 style={{ margin: 0 }}>{project.project_name}</h3>
+                        <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                          <h3 style={{ margin: 0, color: '#3b82f6', cursor: 'pointer' }}>{project.project_name}</h3>
+                        </Link>
                         <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
                           {project.status}
                         </span>
