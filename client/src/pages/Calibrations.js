@@ -78,25 +78,9 @@ function Calibrations() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-value">{calibrations.length}</div>
-          <div className="stat-label">Total Equipment</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: '#10b981' }}>{validCount}</div>
-          <div className="stat-label">Valid Calibrations</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: '#ef4444' }}>{expiredCount}</div>
-          <div className="stat-label">Expired Calibrations</div>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="card">
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="filter-buttons">
           <button
             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
             onClick={() => setFilter('all')}
@@ -120,9 +104,6 @@ function Calibrations() {
 
       {/* Calibrations List */}
       <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Equipment List ({filteredCalibrations.length})</h3>
-        </div>
         {loading ? (
           <div className="loading">Loading calibrations...</div>
         ) : filteredCalibrations.length > 0 ? (

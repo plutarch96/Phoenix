@@ -76,10 +76,7 @@ function Tests() {
       {/* Filters */}
       <div className="card">
         <div className="card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Filter size={20} />
-            <span className="card-title">Filters</span>
-          </div>
+          <h3 className="card-title">Filters</h3>
           {(filters.client_id || filters.status || filters.tag) && (
             <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
               Clear Filters
@@ -132,9 +129,6 @@ function Tests() {
 
       {/* Tests List */}
       <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">All Tests ({tests.length})</h3>
-        </div>
         {loading ? (
           <div className="loading">Loading tests...</div>
         ) : tests.length > 0 ? (

@@ -169,12 +169,11 @@ function Dashboard() {
       )}
 
       {/* Recent Tests and Expiring Calibrations */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div className="grid-2-cols">
         {/* Recent Tests */}
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Recent Tests</h3>
-            <TestTube size={20} color="#64748b" />
           </div>
           {recentTests.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -220,7 +219,6 @@ function Dashboard() {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Equipment Expiring Soon</h3>
-            <AlertTriangle size={20} color="#f59e0b" />
           </div>
           {expiringCalibrations.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

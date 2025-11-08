@@ -473,6 +473,18 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Filter buttons */
+.filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* Loading */
 .loading {
   display: flex;
