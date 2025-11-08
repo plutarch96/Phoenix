@@ -11,6 +11,7 @@
     "build": "cd client && npm run build",
     "migrate": "node server/db/migrate.js",
     "migrate-projects": "node server/db/migrate-projects.js",
+    "migrate-client-contacts": "node server/db/migrate-client-contacts.js",
     "check-db": "node server/db/check-structure.js"
   },
   "keywords": ["test-tracking", "calibration", "obs-streaming"],

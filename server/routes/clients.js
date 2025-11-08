@@ -44,17 +44,25 @@ router.get('/:id', (req, res) => {
 
 // Create new client
 router.post('/', (req, res) => {
-  const { name, contact_email, contact_phone } = req.body;
+  const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: 'Name is required' });
   }
 
+  if (!client_number) {
+    return res.status(400).json({ error: 'Client number is required' });
+  }
+
   db.run(
-    'INSERT INTO clients (name, contact_email, contact_phone) VALUES (?, ?, ?)',
-    [name, contact_email, contact_phone],
+    `INSERT INTO clients (name, client_number, contact_email, contact_phone, address, city, state, zip_code)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [name, client_number, contact_email, contact_phone, address, city, state, zip_code],
     function(err) {
       if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Client number already exists' });
+        }
         return res.status(500).json({ error: err.message });
       }
 
@@ -66,13 +74,17 @@ router.post('/', (req, res) => {
 // Update client
 router.put('/:id', (req, res) => {
   const { id } = req.params;
-  const { name, contact_email, contact_phone } = req.body;
+  const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
   db.run(
-    'UPDATE clients SET name = ?, contact_email = ?, contact_phone = ? WHERE id = ?',
-    [name, contact_email, contact_phone, id],
+    `UPDATE clients SET name = ?, client_number = ?, contact_email = ?, contact_phone = ?,
+     address = ?, city = ?, state = ?, zip_code = ? WHERE id = ?`,
+    [name, client_number, contact_email, contact_phone, address, city, state, zip_code, id],
     function(err) {
       if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Client number already exists' });
+        }
         return res.status(500).json({ error: err.message });
       }
       res.json({ message: 'Client updated successfully' });

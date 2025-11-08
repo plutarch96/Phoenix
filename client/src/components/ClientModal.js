@@ -5,8 +5,13 @@ import { clientsAPI } from '../services/api';
 function ClientModal({ client, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: client?.name || '',
+    client_number: client?.client_number || '',
     contact_email: client?.contact_email || '',
-    contact_phone: client?.contact_phone || ''
+    contact_phone: client?.contact_phone || '',
+    address: client?.address || '',
+    city: client?.city || '',
+    state: client?.state || '',
+    zip_code: client?.zip_code || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -62,27 +67,96 @@ function ClientModal({ client, onClose, onSuccess }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Contact Email</label>
+            <label className="form-label">Client Number *</label>
             <input
-              type="email"
-              name="contact_email"
+              type="text"
+              name="client_number"
               className="form-input"
-              value={formData.contact_email}
+              value={formData.client_number}
               onChange={handleChange}
-              placeholder="client@example.com"
+              required
+              placeholder="e.g., 549"
             />
+            <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
+              This will be used in test IDs: {formData.client_number || '###'}-007-001
+            </small>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">Contact Email</label>
+              <input
+                type="email"
+                name="contact_email"
+                className="form-input"
+                value={formData.contact_email}
+                onChange={handleChange}
+                placeholder="client@example.com"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Contact Phone</label>
+              <input
+                type="tel"
+                name="contact_phone"
+                className="form-input"
+                value={formData.contact_phone}
+                onChange={handleChange}
+                placeholder="(555) 123-4567"
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Contact Phone</label>
+            <label className="form-label">Address</label>
             <input
-              type="tel"
-              name="contact_phone"
+              type="text"
+              name="address"
               className="form-input"
-              value={formData.contact_phone}
+              value={formData.address}
               onChange={handleChange}
-              placeholder="(555) 123-4567"
+              placeholder="Street address"
             />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label className="form-label">City</label>
+              <input
+                type="text"
+                name="city"
+                className="form-input"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="City"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">State</label>
+              <input
+                type="text"
+                name="state"
+                className="form-input"
+                value={formData.state}
+                onChange={handleChange}
+                placeholder="CA"
+                maxLength="2"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">ZIP Code</label>
+              <input
+                type="text"
+                name="zip_code"
+                className="form-input"
+                value={formData.zip_code}
+                onChange={handleChange}
+                placeholder="12345"
+              />
+            </div>
           </div>
 
           <div className="modal-actions">
