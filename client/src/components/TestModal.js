@@ -85,27 +85,36 @@ function TestModal({ test, clients, onClose, onSuccess }) {
 
           <div className="grid grid-2">
             <div className="form-group">
-              <label className="form-label">Test Type</label>
-              <input
-                type="text"
+              <label className="form-label">Test Type *</label>
+              <select
                 name="test_type"
-                className="form-input"
+                className="form-select"
                 value={formData.test_type}
                 onChange={handleChange}
-                placeholder="e.g., Fire Resistance, Smoke Development"
-              />
+                required
+              >
+                <option value="">Select test type</option>
+                <option value="Unit">Unit</option>
+                <option value="Module">Module</option>
+                <option value="Cell">Cell</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Governing Standard</label>
-              <input
-                type="text"
+              <label className="form-label">Governing Standard *</label>
+              <select
                 name="governing_standard"
-                className="form-input"
+                className="form-select"
                 value={formData.governing_standard}
                 onChange={handleChange}
-                placeholder="e.g., ASTM E119, UL 263"
-              />
+                required
+              >
+                <option value="">Select standard</option>
+                <option value="UL 9540A">UL 9540A</option>
+                <option value="CSA 800">CSA 800</option>
+                <option value="NFPA 855">NFPA 855</option>
+              </select>
             </div>
           </div>
 
