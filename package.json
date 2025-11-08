@@ -8,7 +8,8 @@
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install && cd ..",
-    "build": "cd client && npm run build"
+    "build": "cd client && npm run build",
+    "migrate": "node server/db/migrate.js"
   },
   "keywords": ["test-tracking", "calibration", "obs-streaming"],
   "author": "",
