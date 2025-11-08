@@ -32,6 +32,8 @@ db.serialize(() => {
       city TEXT,
       state TEXT,
       zip_code TEXT,
+      contact_email TEXT,
+      contact_phone TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
