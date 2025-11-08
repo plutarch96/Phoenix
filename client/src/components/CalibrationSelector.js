@@ -85,26 +85,26 @@ function CalibrationSelector({ testId, onClose, onSuccess }) {
         {loading ? (
           <div className="loading">Loading calibrations...</div>
         ) : filteredCalibrations.length > 0 ? (
-          <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
             {filteredCalibrations.map(cal => (
               <div
                 key={cal.id}
                 onClick={() => setSelectedCalibration(cal)}
                 style={{
                   padding: '1rem',
-                  borderBottom: '1px solid #e5e7eb',
+                  borderBottom: '1px solid var(--border-color)',
                   cursor: 'pointer',
-                  background: selectedCalibration?.id === cal.id ? '#dbeafe' : 'white',
+                  background: selectedCalibration?.id === cal.id ? '#dbeafe' : 'var(--bg-secondary)',
                   transition: 'background 0.2s'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedCalibration?.id !== cal.id) {
-                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.background = 'var(--bg-item-hover)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedCalibration?.id !== cal.id) {
-                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.background = 'var(--bg-secondary)';
                   }
                 }}
               >

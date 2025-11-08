@@ -130,6 +130,10 @@ function TestDetail() {
     window.open(`/api/media/test/${id}/download-category/${category}`, '_blank');
   };
 
+  const handleDownloadAllCalibrationPDFs = () => {
+    window.open(`/api/tests/${id}/download-calibration-pdfs`, '_blank');
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'badge-warning',
@@ -420,16 +424,16 @@ function TestDetail() {
         <div className="card-header">
           <h3 className="card-title">
             <Settings size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Calibration Documents ({calibrationDocs.length})
+            Calibration Equipment ({test.calibrations?.length || 0})
           </h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {calibrationDocs.length > 0 && (
+            {test.calibrations && test.calibrations.length > 0 && (
               <button
                 className="btn btn-secondary btn-sm"
-                onClick={() => handleDownloadCategory('calibration')}
+                onClick={handleDownloadAllCalibrationPDFs}
               >
                 <FolderArchive size={16} />
-                Download All as ZIP
+                Download All PDFs
               </button>
             )}
             <button

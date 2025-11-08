@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const path = require('path');
+const fs = require('fs');
+const archiver = require('archiver');
 
 // Get all tests with optional filtering
 router.get('/', (req, res) => {
@@ -278,6 +281,71 @@ router.delete('/:id/calibrations/:calibration_id', (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       res.json({ message: 'Calibration removed from test' });
+    }
+  );
+});
+
+// Download all calibration PDFs for a test as ZIP
+router.get('/:id/download-calibration-pdfs', (req, res) => {
+  const { id } = req.params;
+
+  // Get all calibrations linked to this test
+  db.all(
+    `SELECT c.* FROM calibrations c
+     INNER JOIN test_calibrations tc ON c.id = tc.calibration_id
+     WHERE tc.test_id = ?`,
+    [id],
+    (err, calibrations) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (!calibrations || calibrations.length === 0) {
+        return res.status(404).json({ error: 'No calibrations found for this test' });
+      }
+
+      // Filter calibrations that have PDF files
+      const calibrationsWithPDFs = calibrations.filter(cal => cal.pdf_path);
+
+      if (calibrationsWithPDFs.length === 0) {
+        return res.status(404).json({ error: 'No calibration PDFs found for this test' });
+      }
+
+      // Create zip archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+
+      // Set response headers
+      res.attachment(`test-${id}-calibration-pdfs.zip`);
+      res.setHeader('Content-Type', 'application/zip');
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add files to archive
+      let filesAdded = 0;
+      calibrationsWithPDFs.forEach(cal => {
+        const filePath = path.join(__dirname, '..', cal.pdf_path);
+        if (fs.existsSync(filePath)) {
+          // Use equipment ID and name for the filename
+          const fileName = `${cal.equipment_id}_${cal.equipment_name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+          archive.file(filePath, { name: fileName });
+          filesAdded++;
+        } else {
+          console.error('[CALIBRATION] PDF file not found:', filePath);
+        }
+      });
+
+      console.log('[CALIBRATION] Adding', filesAdded, 'PDF files to zip');
+
+      // Finalize archive
+      archive.finalize();
+
+      archive.on('error', (err) => {
+        console.error('[CALIBRATION] Archive error:', err);
+        res.status(500).json({ error: 'Error creating archive' });
+      });
     }
   );
 });
