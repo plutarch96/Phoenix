@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tests from './pages/Tests';
@@ -19,6 +20,7 @@ import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
 import UsersPage from './pages/Users';
 import GlobalSearch from './components/GlobalSearch';
+import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -65,6 +67,7 @@ function Navigation() {
       <div className="sidebar-header">
         <Flame size={32} />
         <h1>FRA Lab</h1>
+        <ThemeToggle />
       </div>
       <ul className="nav-menu">
         {navItems.map((item) => {
@@ -136,15 +139,8 @@ function MainApp() {
     <div className="app">
       <Navigation />
       <main className="main-content">
-        <div style={{
-          padding: '1rem 2rem',
-          background: 'white',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <h3 style={{ margin: 0, color: '#1e293b' }}>
+        <div className="top-header">
+          <h3 style={{ margin: 0 }}>
             Fire & Risk Alliance Laboratory
           </h3>
           <GlobalSearch />
@@ -165,16 +161,18 @@ function MainApp() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/*" element={
-            <PrivateRoute>
-              <MainApp />
-            </PrivateRoute>
-          } />
-        </Routes>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/*" element={
+              <PrivateRoute>
+                <MainApp />
+              </PrivateRoute>
+            } />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }
