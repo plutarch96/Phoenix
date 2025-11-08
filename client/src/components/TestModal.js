@@ -16,7 +16,7 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     customLocation: isPresetLocation || !test?.location ? '' : test.location,
     client_id: test?.client_id || '',
     test_date: test?.test_date || '',
-    status: test?.status || 'pending',
+    status: test?.status || 'Proposed',
     tags: test?.tags?.join(', ') || ''
   });
   const [loading, setLoading] = useState(false);
@@ -123,6 +123,8 @@ function TestModal({ test, clients, onClose, onSuccess }) {
                 <option value="UL 9540A">UL 9540A</option>
                 <option value="CSA 800">CSA 800</option>
                 <option value="NFPA 855">NFPA 855</option>
+                <option value="Other">Other</option>
+                <option value="None">None</option>
               </select>
             </div>
           </div>
@@ -191,10 +193,10 @@ function TestModal({ test, clients, onClose, onSuccess }) {
               value={formData.status}
               onChange={handleChange}
             >
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
+              <option value="Proposed">Proposed</option>
+              <option value="Planning">Planning</option>
+              <option value="Complete">Complete</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
 

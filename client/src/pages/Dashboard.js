@@ -85,8 +85,8 @@ function Dashboard() {
             <div className="stat-value">{stats?.totalTests || 0}</div>
             <div className="stat-label">Total Tests</div>
             <div className="tags" style={{ marginTop: '0.75rem' }}>
-              <span className="badge badge-info">{getStatusCount('pending')} Pending</span>
-              <span className="badge badge-success">{getStatusCount('completed')} Completed</span>
+              <span className="badge badge-warning">{getStatusCount('Planning')} Planning</span>
+              <span className="badge badge-success">{getStatusCount('Complete')} Complete</span>
             </div>
           </div>
         </Link>
@@ -186,9 +186,9 @@ function Dashboard() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
                     <strong className="dashboard-item-title">{test.title}</strong>
                     <span className={`badge ${
-                      test.status === 'completed' ? 'badge-success' :
-                      test.status === 'in-progress' ? 'badge-warning' :
-                      test.status === 'pending' ? 'badge-info' : 'badge-danger'
+                      test.status === 'Complete' ? 'badge-success' :
+                      test.status === 'Planning' ? 'badge-warning' :
+                      test.status === 'Proposed' ? 'badge-secondary' : 'badge-danger'
                     }`}>
                       {test.status}
                     </span>

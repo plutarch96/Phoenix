@@ -53,10 +53,10 @@ function Tests() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: 'badge-warning',
-      'in-progress': 'badge-info',
-      completed: 'badge-success',
-      failed: 'badge-danger'
+      'Proposed': 'badge-secondary',
+      'Planning': 'badge-warning',
+      'Complete': 'badge-success',
+      'Cancelled': 'badge-danger'
     };
     return badges[status] || 'badge-info';
   };
@@ -105,10 +105,10 @@ function Tests() {
               onChange={(e) => handleFilterChange('status', e.target.value)}
             >
               <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
+              <option value="Proposed">Proposed</option>
+              <option value="Planning">Planning</option>
+              <option value="Complete">Complete</option>
+              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
           <div className="form-group">

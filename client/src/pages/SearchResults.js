@@ -407,7 +407,7 @@ function TestCard({ test, onClick }) {
             </div>
           )}
         </div>
-        <span className={`badge badge-${test.status === 'completed' ? 'success' : test.status === 'in-progress' ? 'warning' : 'secondary'}`}>
+        <span className={`badge badge-${test.status === 'Complete' ? 'success' : test.status === 'Planning' ? 'warning' : test.status === 'Cancelled' ? 'danger' : 'secondary'}`}>
           {test.status}
         </span>
       </div>
