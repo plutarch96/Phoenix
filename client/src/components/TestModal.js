@@ -23,6 +23,7 @@ function TestModal({ test, clients, onClose, onSuccess }) {
     try {
       const data = {
         ...formData,
+        client_id: formData.client_id || null, // Convert empty string to null
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t)
       };
 
@@ -35,7 +36,7 @@ function TestModal({ test, clients, onClose, onSuccess }) {
       onSuccess();
     } catch (error) {
       console.error('Error saving test:', error);
-      alert('Failed to save test');
+      alert('Failed to save test: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
