@@ -59,11 +59,9 @@ function Navigation() {
   // Base navigation items (visible to all)
   const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/tests', icon: TestTube, label: 'Tests' },
-    { path: '/my-tests', icon: Tag, label: 'My Tests' },
+    { path: '/projects', icon: FolderOpen, label: 'Projects' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
-    { path: '/projects', icon: FolderOpen, label: 'Projects' },
   ];
 
   // Admin-only navigation items
@@ -74,6 +72,9 @@ function Navigation() {
 
   // Combine navigation items based on role
   const navItems = isAdmin() ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+
+  // My Tests - shown at bottom
+  const myTestsItem = { path: '/my-tests', icon: Tag, label: 'My Tests' };
 
   return (
     <nav className="sidebar">
@@ -100,10 +101,27 @@ function Navigation() {
         })}
       </ul>
 
+      {/* My Tests - at bottom above user info */}
+      {user && (
+        <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+          <Link
+            to={myTestsItem.path}
+            className={`nav-item ${location.pathname === myTestsItem.path ? 'active' : ''}`}
+            style={{
+              marginLeft: '1.5rem',
+              marginRight: '1.5rem',
+              marginBottom: '1rem'
+            }}
+          >
+            <Tag size={20} />
+            <span>{myTestsItem.label}</span>
+          </Link>
+        </div>
+      )}
+
       {/* User Info and Logout */}
       {user && (
         <div style={{
-          marginTop: 'auto',
           padding: '1rem 1.5rem',
           borderTop: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
