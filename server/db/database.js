@@ -23,6 +23,8 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       description TEXT,
+      test_type TEXT,
+      governing_standard TEXT,
       client_id INTEGER,
       test_date DATE,
       status TEXT DEFAULT 'pending',
@@ -42,11 +44,22 @@ db.serialize(() => {
     )
   `);
 
+  // Equipment types tracking for auto-generated IDs
+  db.run(`
+    CREATE TABLE IF NOT EXISTS equipment_types (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type_code TEXT UNIQUE NOT NULL,
+      type_name TEXT NOT NULL,
+      next_sequence INTEGER DEFAULT 1
+    )
+  `);
+
   // Calibration equipment table
   db.run(`
     CREATE TABLE IF NOT EXISTS calibrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       equipment_name TEXT NOT NULL,
+      equipment_type TEXT NOT NULL,
       equipment_id TEXT UNIQUE NOT NULL,
       calibration_date DATE NOT NULL,
       expiration_date DATE NOT NULL,
@@ -64,6 +77,7 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       test_id INTEGER,
       media_type TEXT NOT NULL,
+      media_category TEXT,
       file_name TEXT NOT NULL,
       file_path TEXT NOT NULL,
       file_size INTEGER,
@@ -91,6 +105,35 @@ db.serialize(() => {
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_media_test ON test_media(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_test ON test_calibrations(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_cal ON test_calibrations(calibration_id)`);
+
+  // Initialize default equipment types for fire testing
+  const defaultEquipmentTypes = [
+    { code: 'PT', name: 'Pressure Transducer' },
+    { code: 'TC', name: 'Thermocouple' },
+    { code: 'MM', name: 'Multimeter' },
+    { code: 'HF', name: 'Heat Flux Meter' },
+    { code: 'FG', name: 'Flow Gauge' },
+    { code: 'VR', name: 'Video Recorder' },
+    { code: 'DAQ', name: 'Data Acquisition System' },
+    { code: 'LM', name: 'Load Meter' },
+    { code: 'TH', name: 'Thermometer' },
+    { code: 'GS', name: 'Gas Sensor' },
+    { code: 'SM', name: 'Smoke Meter' },
+    { code: 'WS', name: 'Weather Station' },
+    { code: 'CAM', name: 'Camera' },
+    { code: 'MIC', name: 'Microphone' }
+  ];
+
+  const stmt = db.prepare(`
+    INSERT OR IGNORE INTO equipment_types (type_code, type_name, next_sequence)
+    VALUES (?, ?, 1)
+  `);
+
+  defaultEquipmentTypes.forEach(type => {
+    stmt.run(type.code, type.name);
+  });
+
+  stmt.finalize();
 });
 
 module.exports = db;

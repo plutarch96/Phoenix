@@ -13,6 +13,8 @@ const calibrationsRouter = require('./routes/calibrations');
 const clientsRouter = require('./routes/clients');
 const mediaRouter = require('./routes/media');
 const analyticsRouter = require('./routes/analytics');
+const equipmentTypesRouter = require('./routes/equipmentTypes');
+const searchRouter = require('./routes/search');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +41,8 @@ app.use('/api/calibrations', calibrationsRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/equipment-types', equipmentTypesRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

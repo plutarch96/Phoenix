@@ -96,6 +96,7 @@ router.get('/:id', (req, res) => {
 router.post('/', upload.single('pdf'), (req, res) => {
   const {
     equipment_name,
+    equipment_type,
     equipment_id,
     calibration_date,
     expiration_date,
@@ -103,7 +104,7 @@ router.post('/', upload.single('pdf'), (req, res) => {
     notes
   } = req.body;
 
-  if (!equipment_name || !equipment_id || !calibration_date || !expiration_date) {
+  if (!equipment_name || !equipment_type || !equipment_id || !calibration_date || !expiration_date) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -114,9 +115,9 @@ router.post('/', upload.single('pdf'), (req, res) => {
   const status = new Date(expiration_date) < new Date(today) ? 'expired' : 'valid';
 
   db.run(
-    `INSERT INTO calibrations (equipment_name, equipment_id, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [equipment_name, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
+    `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
     function(err) {
       if (err) {
         if (err.message.includes('UNIQUE')) {
@@ -135,6 +136,7 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
   const { id } = req.params;
   const {
     equipment_name,
+    equipment_type,
     equipment_id,
     calibration_date,
     expiration_date,
@@ -153,10 +155,10 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
 
   db.run(
     `UPDATE calibrations
-     SET equipment_name = ?, equipment_id = ?, calibration_date = ?, expiration_date = ?,
+     SET equipment_name = ?, equipment_type = ?, equipment_id = ?, calibration_date = ?, expiration_date = ?,
          calibrated_by = ?, pdf_path = ?, status = ?, notes = ?
      WHERE id = ?`,
-    [equipment_name, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes, id],
+    [equipment_name, equipment_type, equipment_id, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes, id],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });

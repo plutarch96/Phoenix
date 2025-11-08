@@ -63,4 +63,16 @@ export const analyticsAPI = {
   getRecentActivity: (limit) => api.get('/analytics/activity/recent', { params: { limit } }),
 };
 
+// Equipment Types API
+export const equipmentTypesAPI = {
+  getAll: () => api.get('/equipment-types'),
+  generateId: (equipment_type) => api.post('/equipment-types/generate-id', { equipment_type }),
+  create: (data) => api.post('/equipment-types', data),
+};
+
+// Search API (global search)
+export const searchAPI = {
+  global: (query) => api.get('/search', { params: { q: query } }),
+};
+
 export default api;

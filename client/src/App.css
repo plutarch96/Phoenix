@@ -21,7 +21,7 @@ body {
 /* Sidebar Navigation */
 .sidebar {
   width: 250px;
-  background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+  background: linear-gradient(180deg, #991b1b 0%, #b91c1c 100%);
   color: white;
   padding: 0;
   display: flex;
@@ -66,7 +66,7 @@ body {
 .nav-item.active {
   background: rgba(255, 255, 255, 0.15);
   color: white;
-  border-left-color: #60a5fa;
+  border-left-color: #fca5a5;
   font-weight: 600;
 }
 
@@ -134,14 +134,14 @@ body {
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: #dc2626;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: #b91c1c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
 .btn-secondary {
@@ -204,8 +204,8 @@ body {
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 .form-textarea {
@@ -251,8 +251,8 @@ body {
 }
 
 .stat-icon.blue {
-  background: #dbeafe;
-  color: #3b82f6;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .stat-icon.green {
@@ -337,8 +337,8 @@ body {
 }
 
 .badge-info {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* Tags */
