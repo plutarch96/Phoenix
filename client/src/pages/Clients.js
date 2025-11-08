@@ -39,7 +39,7 @@ function Clients() {
 
     try {
       console.log(`Loading projects for client ${clientId}...`);
-      const res = await projectsAPI.getAll({ client_id: clientId });
+      const res = await projectsAPI.getAll({ client_id: clientId, include_tests: true });
       console.log(`Loaded ${res.data.length} projects for client ${clientId}:`, res.data);
       setProjects(prev => {
         const updated = {
@@ -322,7 +322,7 @@ function Clients() {
                             {project.tests && project.tests.length > 0 && (
                               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
                                 <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>
-                                  Tests:
+                                  Tests ({project.tests.length}):
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                   {project.tests.map(test => (
@@ -331,27 +331,41 @@ function Clients() {
                                       to={`/tests/${test.id}`}
                                       style={{
                                         display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.5rem',
+                                        flexDirection: 'column',
+                                        gap: '0.25rem',
+                                        padding: '0.75rem',
                                         background: 'white',
                                         borderRadius: '4px',
                                         textDecoration: 'none',
                                         color: 'inherit',
-                                        border: '1px solid #e2e8f0'
+                                        border: '1px solid #e2e8f0',
+                                        transition: 'all 0.2s'
                                       }}
                                       className="hover-lift"
                                     >
-                                      <FileText size={14} color="#64748b" />
-                                      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#3b82f6' }}>
-                                        {getTestId(client, project, test)}
-                                      </span>
-                                      <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <FileText size={14} color="#64748b" />
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#3b82f6' }}>
+                                          {getTestId(client, project, test)}
+                                        </span>
+                                        <span className={`badge badge-${test.status === 'completed' ? 'success' : test.status === 'in-progress' ? 'warning' : 'info'}`} style={{ marginLeft: 'auto' }}>
+                                          {test.status}
+                                        </span>
+                                      </div>
+                                      <div style={{ fontSize: '0.875rem', color: '#1e293b', fontWeight: 500 }}>
                                         {test.title}
-                                      </span>
-                                      <span className={`badge badge-${test.status === 'completed' ? 'success' : test.status === 'in-progress' ? 'warning' : 'info'}`} style={{ marginLeft: 'auto' }}>
-                                        {test.status}
-                                      </span>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
+                                        {test.test_type && (
+                                          <span>Type: {test.test_type}</span>
+                                        )}
+                                        {test.test_date && (
+                                          <span>Date: {new Date(test.test_date).toLocaleDateString()}</span>
+                                        )}
+                                        {test.governing_standard && (
+                                          <span>Standard: {test.governing_standard}</span>
+                                        )}
+                                      </div>
                                     </Link>
                                   ))}
                                 </div>

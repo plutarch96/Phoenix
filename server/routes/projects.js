@@ -4,8 +4,8 @@ const db = require('../db/database');
 
 // Get all projects (optionally filtered by client)
 router.get('/', (req, res) => {
-  const { client_id } = req.query;
-  console.log('[PROJECTS] Getting projects, client_id filter:', client_id);
+  const { client_id, include_tests } = req.query;
+  console.log('[PROJECTS] Getting projects, client_id filter:', client_id, 'include_tests:', include_tests);
 
   let query = `
     SELECT p.*, c.name as client_name, c.client_number,
@@ -23,13 +23,40 @@ router.get('/', (req, res) => {
 
   query += ' GROUP BY p.id ORDER BY p.created_at DESC';
 
-  db.all(query, params, (err, rows) => {
+  db.all(query, params, (err, projects) => {
     if (err) {
       console.log('[PROJECTS] Database error:', err.message);
       return res.status(500).json({ error: err.message });
     }
-    console.log(`[PROJECTS] Returning ${rows.length} projects`);
-    res.json(rows);
+
+    // If include_tests is requested, fetch tests for each project
+    if (include_tests === 'true' && projects.length > 0) {
+      let completed = 0;
+
+      projects.forEach((project, index) => {
+        db.all(
+          'SELECT * FROM tests WHERE project_id = ? ORDER BY test_number',
+          [project.id],
+          (err, tests) => {
+            if (err) {
+              console.error('[PROJECTS] Error loading tests for project', project.id, err);
+              projects[index].tests = [];
+            } else {
+              projects[index].tests = tests;
+            }
+
+            completed++;
+            if (completed === projects.length) {
+              console.log(`[PROJECTS] Returning ${projects.length} projects with tests`);
+              res.json(projects);
+            }
+          }
+        );
+      });
+    } else {
+      console.log(`[PROJECTS] Returning ${projects.length} projects`);
+      res.json(projects);
+    }
   });
 });
 
