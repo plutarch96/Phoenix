@@ -145,22 +145,22 @@ function Dashboard() {
 
       {/* Alerts */}
       {(stats?.expiredCalibrations > 0 || stats?.upcomingExpirations > 0) && (
-        <div className="card" style={{ background: '#fef3c7', borderLeft: '4px solid #f59e0b' }}>
+        <div className="card alert-box">
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-            <AlertTriangle size={24} color="#f59e0b" />
+            <AlertTriangle size={24} style={{ color: 'var(--icon-yellow)' }} />
             <div>
-              <h3 style={{ marginBottom: '0.5rem', color: '#92400e' }}>Calibration Alerts</h3>
+              <h3>Calibration Alerts</h3>
               {stats.expiredCalibrations > 0 && (
-                <p style={{ color: '#78350f', marginBottom: '0.25rem' }}>
+                <p>
                   ⚠️ {stats.expiredCalibrations} calibration(s) have expired
                 </p>
               )}
               {stats.upcomingExpirations > 0 && (
-                <p style={{ color: '#78350f' }}>
+                <p>
                   📅 {stats.upcomingExpirations} calibration(s) expiring within 30 days
                 </p>
               )}
-              <Link to="/calibrations" style={{ color: '#92400e', fontWeight: 600, marginTop: '0.5rem', display: 'inline-block' }}>
+              <Link to="/calibrations">
                 View Calibrations →
               </Link>
             </div>
@@ -181,18 +181,10 @@ function Dashboard() {
                 <Link
                   key={test.id}
                   to={`/tests/${test.id}`}
-                  style={{
-                    textDecoration: 'none',
-                    padding: '0.75rem',
-                    background: '#f9fafb',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb',
-                    transition: 'all 0.2s'
-                  }}
-                  className="hover-lift"
+                  className="dashboard-list-item"
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
-                    <strong style={{ color: '#1e293b', fontSize: '0.875rem' }}>{test.title}</strong>
+                    <strong className="dashboard-item-title">{test.title}</strong>
                     <span className={`badge ${
                       test.status === 'completed' ? 'badge-success' :
                       test.status === 'in-progress' ? 'badge-warning' :
@@ -201,7 +193,7 @@ function Dashboard() {
                       {test.status}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem' }}>
+                  <div className="dashboard-item-meta">
                     {test.test_type && <span>Type: {test.test_type}</span>}
                     <span>Created: {formatDate(test.created_at)}</span>
                   </div>
@@ -229,23 +221,15 @@ function Dashboard() {
                   <Link
                     key={calibration.id}
                     to="/calibrations"
-                    style={{
-                      textDecoration: 'none',
-                      padding: '0.75rem',
-                      background: isUrgent ? '#fef2f2' : '#f9fafb',
-                      borderRadius: '6px',
-                      border: `1px solid ${isUrgent ? '#fca5a5' : '#e5e7eb'}`,
-                      transition: 'all 0.2s'
-                    }}
-                    className="hover-lift"
+                    className={`dashboard-list-item ${isUrgent ? 'dashboard-list-item-urgent' : ''}`}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
-                      <strong style={{ color: '#1e293b', fontSize: '0.875rem' }}>{calibration.equipment_name}</strong>
+                      <strong className="dashboard-item-title">{calibration.equipment_name}</strong>
                       <span className={`badge ${isUrgent ? 'badge-danger' : 'badge-warning'}`}>
                         {daysLeft} day{daysLeft !== 1 ? 's' : ''}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem' }}>
+                    <div className="dashboard-item-meta">
                       <span>ID: {calibration.equipment_id}</span>
                       <span>Expires: {formatDate(calibration.expiration_date)}</span>
                     </div>

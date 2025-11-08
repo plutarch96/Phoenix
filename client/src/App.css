@@ -5,6 +5,7 @@
   --bg-tertiary: #f9fafb;
   --bg-elevated: #ffffff;
   --bg-input: #ffffff;
+  --bg-item-hover: #f9fafb;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-tertiary: #374151;
@@ -18,27 +19,54 @@
   --dropdown-bg: #ffffff;
   --modal-bg: #ffffff;
   --modal-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Icon colors */
+  --icon-primary: #dc2626;
+  --icon-blue: #3b82f6;
+  --icon-green: #10b981;
+  --icon-yellow: #f59e0b;
+  --icon-secondary: #64748b;
+
+  /* Badge backgrounds */
+  --badge-bg-info: #fee2e2;
+  --badge-bg-success: #d1fae5;
+  --badge-bg-warning: #fef3c7;
+  --badge-bg-danger: #fee2e2;
 }
 
 .dark-mode {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1a2332;
-  --bg-tertiary: #1e293b;
-  --bg-elevated: #1e293b;
-  --bg-input: #1e293b;
-  --text-primary: #e2e8f0;
+  --bg-primary: #0a0f1e;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1f2937;
+  --bg-elevated: #1f2937;
+  --bg-input: #1f2937;
+  --bg-item-hover: #374151;
+  --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-tertiary: #cbd5e1;
   --text-muted: #64748b;
-  --border-color: #334155;
-  --border-light: #475569;
-  --border-input: #475569;
+  --border-color: #374151;
+  --border-light: #4b5563;
+  --border-input: #4b5563;
   --shadow: rgba(0, 0, 0, 0.5);
   --shadow-lg: rgba(0, 0, 0, 0.7);
-  --card-hover-bg: #1e293b;
-  --dropdown-bg: #1e293b;
-  --modal-bg: #1e293b;
-  --modal-overlay: rgba(0, 0, 0, 0.75);
+  --card-hover-bg: #1f2937;
+  --dropdown-bg: #1f2937;
+  --modal-bg: #1f2937;
+  --modal-overlay: rgba(0, 0, 0, 0.8);
+
+  /* Icon colors - brighter in dark mode */
+  --icon-primary: #ef4444;
+  --icon-blue: #60a5fa;
+  --icon-green: #34d399;
+  --icon-yellow: #fbbf24;
+  --icon-secondary: #94a3b8;
+
+  /* Badge backgrounds - darker with better contrast */
+  --badge-bg-info: #1e3a8a;
+  --badge-bg-success: #064e3b;
+  --badge-bg-warning: #78350f;
+  --badge-bg-danger: #7f1d1d;
 }
 
 * {
@@ -396,27 +424,52 @@ body {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid transparent;
 }
 
 .badge-success {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--badge-bg-success);
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.dark-mode .badge-success {
+  color: #34d399;
+  border-color: #34d399;
 }
 
 .badge-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--badge-bg-warning);
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.dark-mode .badge-warning {
+  color: #fbbf24;
+  border-color: #fbbf24;
 }
 
 .badge-danger {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--badge-bg-danger);
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.dark-mode .badge-danger {
+  color: #ef4444;
+  border-color: #ef4444;
 }
 
 .badge-info {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--badge-bg-info);
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark-mode .badge-info {
+  color: #60a5fa;
+  border-color: #60a5fa;
 }
 
 /* Tags */
@@ -562,6 +615,71 @@ body {
 
 .text-muted {
   color: var(--text-muted);
+}
+
+/* Dashboard list items */
+.dashboard-list-item {
+  text-decoration: none;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+  display: block;
+}
+
+.dashboard-list-item:hover {
+  background: var(--card-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px var(--shadow);
+}
+
+.dashboard-list-item-urgent {
+  background: var(--badge-bg-danger);
+  border-color: var(--icon-primary);
+}
+
+.dashboard-item-title {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dashboard-item-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Alert box */
+.alert-box {
+  background: var(--badge-bg-warning);
+  border-left: 4px solid var(--icon-yellow);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.alert-box h3 {
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.alert-box p {
+  color: var(--text-tertiary);
+  margin-bottom: 0.25rem;
+}
+
+.alert-box a {
+  color: var(--icon-yellow);
+  font-weight: 600;
+  margin-top: 0.5rem;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.alert-box a:hover {
+  text-decoration: underline;
 }
 
 /* Media Grid */
