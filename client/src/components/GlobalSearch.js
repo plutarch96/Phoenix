@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, TestTube, Settings, X } from 'lucide-react';
+import { Search, TestTube, Settings, X, Users, FolderOpen } from 'lucide-react';
 import { searchAPI } from '../services/api';
 
 function GlobalSearch() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState({ tests: [], calibrations: [] });
+  const [results, setResults] = useState({ tests: [], calibrations: [], clients: [], projects: [] });
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const searchRef = useRef(null);
@@ -27,7 +27,7 @@ function GlobalSearch() {
       if (query.trim().length >= 2) {
         performSearch();
       } else {
-        setResults({ tests: [], calibrations: [] });
+        setResults({ tests: [], calibrations: [], clients: [], projects: [] });
         setShowResults(false);
       }
     }, 300);
@@ -53,12 +53,15 @@ function GlobalSearch() {
       navigate(`/tests/${id}`);
     } else if (type === 'calibration') {
       navigate(`/calibrations`);
+    } else if (type === 'client' || type === 'project') {
+      navigate(`/clients`);
     }
     setQuery('');
     setShowResults(false);
   };
 
-  const totalResults = results.tests.length + results.calibrations.length;
+  const totalResults = results.tests.length + results.calibrations.length +
+                       results.clients.length + results.projects.length;
 
   return (
     <div ref={searchRef} style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
@@ -81,7 +84,7 @@ function GlobalSearch() {
             paddingRight: query ? '40px' : '12px',
             fontSize: '0.875rem'
           }}
-          placeholder="Search tests, equipment..."
+          placeholder="Search tests, clients, projects, equipment..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -225,6 +228,112 @@ function GlobalSearch() {
                           </div>
                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                             {cal.equipment_id} • {cal.equipment_type}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {results.clients.length > 0 && (
+                <div>
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    background: '#f9fafb',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Clients ({results.clients.length})
+                  </div>
+                  {results.clients.map(client => (
+                    <div
+                      key={client.id}
+                      onClick={() => handleResultClick('client', client.id)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        borderBottom: '1px solid #e5e7eb',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
+                          background: '#dbeafe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Users size={16} color="#3b82f6" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, marginBottom: '0.125rem' }}>
+                            {client.name}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            {client.client_number && `#${client.client_number} • `}
+                            {client.contact_email || 'Client'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {results.projects.length > 0 && (
+                <div>
+                  <div style={{
+                    padding: '0.75rem 1rem',
+                    background: '#f9fafb',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    Projects ({results.projects.length})
+                  </div>
+                  {results.projects.map(project => (
+                    <div
+                      key={project.id}
+                      onClick={() => handleResultClick('project', project.id)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        borderBottom: '1px solid #e5e7eb',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
+                          background: '#fef3c7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <FolderOpen size={16} color="#f59e0b" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, marginBottom: '0.125rem' }}>
+                            {project.project_name}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            {project.client_name && `${project.client_name} • `}
+                            #{project.client_number}-{project.project_number}
                           </div>
                         </div>
                       </div>
