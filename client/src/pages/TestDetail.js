@@ -14,10 +14,11 @@ import {
   Download,
   FolderArchive
 } from 'lucide-react';
-import { testsAPI, mediaAPI, calibrationsAPI } from '../services/api';
+import { testsAPI, mediaAPI, calibrationsAPI, clientsAPI } from '../services/api';
 import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
 import TestStream from '../components/TestStream';
+import TestModal from '../components/TestModal';
 
 function TestDetail() {
   const { id } = useParams();
@@ -27,9 +28,12 @@ function TestDetail() {
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [uploadCategory, setUploadCategory] = useState(null);
   const [showCalibrationSelector, setShowCalibrationSelector] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [clients, setClients] = useState([]);
 
   useEffect(() => {
     loadTest();
+    loadClients();
   }, [id]);
 
   const loadTest = async () => {
@@ -41,6 +45,20 @@ function TestDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadClients = async () => {
+    try {
+      const res = await clientsAPI.getAll();
+      setClients(res.data);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
+
+  const handleTestUpdated = () => {
+    setShowTestModal(false);
+    loadTest();
   };
 
   const handleDelete = async () => {
@@ -285,7 +303,7 @@ function TestDetail() {
             )}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-secondary">
+            <button className="btn btn-secondary" onClick={() => setShowTestModal(true)}>
               <Edit size={20} />
               Edit
             </button>
@@ -543,6 +561,15 @@ function TestDetail() {
           testId={id}
           onClose={() => setShowCalibrationSelector(false)}
           onSuccess={handleCalibrationAdded}
+        />
+      )}
+
+      {showTestModal && (
+        <TestModal
+          test={test}
+          clients={clients}
+          onClose={() => setShowTestModal(false)}
+          onSuccess={handleTestUpdated}
         />
       )}
     </div>

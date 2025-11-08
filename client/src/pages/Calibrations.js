@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, AlertTriangle, FileText, Trash2 } from 'lucide-react';
+import { Plus, Search, AlertTriangle, FileText, Trash2, Edit2 } from 'lucide-react';
 import { calibrationsAPI } from '../services/api';
 import CalibrationModal from '../components/CalibrationModal';
 
@@ -7,6 +7,7 @@ function Calibrations() {
   const [calibrations, setCalibrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedCalibration, setSelectedCalibration] = useState(null);
   const [filter, setFilter] = useState('all'); // all, valid, expired
 
   useEffect(() => {
@@ -38,7 +39,13 @@ function Calibrations() {
 
   const handleCalibrationSaved = () => {
     setShowModal(false);
+    setSelectedCalibration(null);
     loadCalibrations();
+  };
+
+  const handleEdit = (calibration) => {
+    setSelectedCalibration(calibration);
+    setShowModal(true);
   };
 
   const filteredCalibrations = calibrations.filter(cal => {
@@ -177,12 +184,20 @@ function Calibrations() {
                         )}
                       </td>
                       <td>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(cal.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleEdit(cal)}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(cal.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -205,7 +220,11 @@ function Calibrations() {
 
       {showModal && (
         <CalibrationModal
-          onClose={() => setShowModal(false)}
+          calibration={selectedCalibration}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedCalibration(null);
+          }}
           onSuccess={handleCalibrationSaved}
         />
       )}
