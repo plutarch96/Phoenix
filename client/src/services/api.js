@@ -46,6 +46,13 @@ export const testsAPI = {
     api.post(`/tests/${testId}/calibrations`, { calibration_id: calibrationId }),
   removeCalibration: (testId, calibrationId) =>
     api.delete(`/tests/${testId}/calibrations/${calibrationId}`),
+  // Test assignments (tagging)
+  assignToUser: (testId, userId) =>
+    api.post(`/tests/${testId}/assign`, { user_id: userId }),
+  unassignFromUser: (testId, userId) =>
+    api.delete(`/tests/${testId}/assign/${userId}`),
+  getMyTests: (userId) => api.get(`/tests/my-tests/${userId}`),
+  isAssigned: (testId, userId) => api.get(`/tests/${testId}/is-assigned/${userId}`),
 };
 
 // Calibrations API
@@ -124,6 +131,18 @@ export const authAPI = {
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
   getUsers: () => api.get('/auth/users'),
+};
+
+// Reports API
+export const reportsAPI = {
+  getByTest: (testId) => api.get(`/reports/test/${testId}`),
+  getLatest: (testId) => api.get(`/reports/test/${testId}/latest`),
+  upload: (formData) => api.post('/reports/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateStatus: (id, status) => api.put(`/reports/${id}/status`, { status }),
+  download: (id) => `/api/reports/download/${id}`,
+  delete: (id) => api.delete(`/reports/${id}`),
 };
 
 export default api;

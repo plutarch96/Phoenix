@@ -350,4 +350,98 @@ router.get('/:id/download-calibration-pdfs', (req, res) => {
   );
 });
 
+// Tag test as "Mine" (assign to user)
+router.post('/:id/assign', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'user_id is required' });
+  }
+
+  db.run(
+    'INSERT INTO test_assignments (test_id, user_id) VALUES (?, ?)',
+    [id, user_id],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Test already tagged by this user' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ message: 'Test tagged successfully' });
+    }
+  );
+});
+
+// Untag test (remove assignment from user)
+router.delete('/:id/assign/:user_id', (req, res) => {
+  const { id, user_id } = req.params;
+
+  db.run(
+    'DELETE FROM test_assignments WHERE test_id = ? AND user_id = ?',
+    [id, user_id],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Test untagged successfully' });
+    }
+  );
+});
+
+// Get user's tagged tests (My Tests)
+router.get('/my-tests/:user_id', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT DISTINCT t.*, c.name as client_name
+    FROM tests t
+    LEFT JOIN clients c ON t.client_id = c.id
+    INNER JOIN test_assignments ta ON t.id = ta.test_id
+    WHERE ta.user_id = ?
+    ORDER BY ta.assigned_at DESC
+  `;
+
+  db.all(query, [user_id], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Get tags for each test
+    const testsWithTags = rows.map(test => {
+      return new Promise((resolve) => {
+        db.all('SELECT tag FROM test_tags WHERE test_id = ?', [test.id], (err, tags) => {
+          if (err) {
+            test.tags = [];
+          } else {
+            test.tags = tags.map(t => t.tag);
+          }
+          resolve(test);
+        });
+      });
+    });
+
+    Promise.all(testsWithTags).then(tests => {
+      res.json(tests);
+    });
+  });
+});
+
+// Check if user has tagged a test
+router.get('/:id/is-assigned/:user_id', (req, res) => {
+  const { id, user_id } = req.params;
+
+  db.get(
+    'SELECT id FROM test_assignments WHERE test_id = ? AND user_id = ?',
+    [id, user_id],
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ isAssigned: !!row });
+    }
+  );
+});
+
 module.exports = router;
