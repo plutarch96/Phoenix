@@ -32,13 +32,18 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Get all calibrations
+// Get all calibrations (active only by default)
 router.get('/', (req, res) => {
-  const { status, equipment_id } = req.query;
+  const { status, equipment_id, include_history } = req.query;
 
   let query = 'SELECT * FROM calibrations';
   const conditions = [];
   const params = [];
+
+  // Only show active calibrations by default unless include_history is set
+  if (include_history !== 'true') {
+    conditions.push('(is_active = 1 OR is_active IS NULL)');
+  }
 
   if (status) {
     conditions.push('status = ?');
@@ -54,7 +59,7 @@ router.get('/', (req, res) => {
     query += ' WHERE ' + conditions.join(' AND ');
   }
 
-  query += ' ORDER BY expiration_date ASC';
+  query += ' ORDER BY expiration_date ASC, created_at DESC';
 
   db.all(query, params, (err, rows) => {
     if (err) {
@@ -92,7 +97,33 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// Create new calibration with PDF upload
+// Get calibration history for specific equipment
+router.get('/history/:equipment_id', (req, res) => {
+  const { equipment_id } = req.params;
+
+  db.all(
+    `SELECT * FROM calibrations
+     WHERE equipment_id = ?
+     ORDER BY calibration_date DESC`,
+    [equipment_id],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Update status based on expiration date
+      const today = new Date().toISOString().split('T')[0];
+      const updatedRows = rows.map(row => ({
+        ...row,
+        status: new Date(row.expiration_date) < new Date(today) ? 'expired' : 'valid'
+      }));
+
+      res.json(updatedRows);
+    }
+  );
+});
+
+// Create new calibration with PDF upload (with history logging)
 router.post('/', upload.single('pdf'), (req, res) => {
   const {
     equipment_name,
@@ -115,24 +146,51 @@ router.post('/', upload.single('pdf'), (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const status = new Date(expiration_date) < new Date(today) ? 'expired' : 'valid';
 
-  db.run(
-    `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
-    function(err) {
+  // First, check if there's an active calibration with this equipment_id
+  db.get(
+    'SELECT id FROM calibrations WHERE equipment_id = ? AND (is_active = 1 OR is_active IS NULL)',
+    [equipment_id],
+    (err, existingCalibration) => {
       if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'Equipment ID already exists' });
-        }
         return res.status(500).json({ error: err.message });
       }
 
-      res.status(201).json({ id: this.lastID, message: 'Calibration created successfully' });
+      // Insert the new calibration
+      db.run(
+        `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          const newCalibrationId = this.lastID;
+
+          // If there was an existing active calibration, mark it as inactive
+          if (existingCalibration) {
+            db.run(
+              'UPDATE calibrations SET is_active = 0, superseded_by = ? WHERE id = ?',
+              [newCalibrationId, existingCalibration.id],
+              (err) => {
+                if (err) {
+                  console.error('Error updating old calibration:', err);
+                }
+              }
+            );
+          }
+
+          res.status(201).json({
+            id: newCalibrationId,
+            message: existingCalibration ? 'Calibration updated with history logging' : 'Calibration created successfully'
+          });
+        }
+      );
     }
   );
 });
 
-// Update calibration
+// Update calibration (creates new record with history logging)
 router.put('/:id', upload.single('pdf'), (req, res) => {
   const { id } = req.params;
   const {
@@ -155,17 +213,30 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const status = new Date(expiration_date) < new Date(today) ? 'expired' : 'valid';
 
+  // Create new calibration record
   db.run(
-    `UPDATE calibrations
-     SET equipment_name = ?, equipment_type = ?, equipment_id = ?, serial_number = ?, calibration_date = ?, expiration_date = ?,
-         calibrated_by = ?, pdf_path = ?, status = ?, notes = ?
-     WHERE id = ?`,
-    [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes, id],
+    `INSERT INTO calibrations (equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdf_path, status, notes, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    [equipment_name, equipment_type, equipment_id, serial_number, calibration_date, expiration_date, calibrated_by, pdfPath, status, notes],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-      res.json({ message: 'Calibration updated successfully' });
+
+      const newCalibrationId = this.lastID;
+
+      // Mark the old calibration as inactive
+      db.run(
+        'UPDATE calibrations SET is_active = 0, superseded_by = ? WHERE id = ?',
+        [newCalibrationId, id],
+        (err) => {
+          if (err) {
+            console.error('Error updating old calibration:', err);
+          }
+        }
+      );
+
+      res.json({ id: newCalibrationId, message: 'Calibration updated with history logging' });
     }
   );
 });
