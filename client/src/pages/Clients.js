@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users as UsersIcon, Mail, Phone, Trash2 } from 'lucide-react';
-import { clientsAPI } from '../services/api';
+import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { clientsAPI, projectsAPI } from '../services/api';
 import ClientModal from '../components/ClientModal';
+import ProjectModal from '../components/ProjectModal';
 
 function Clients() {
   const [clients, setClients] = useState([]);
+  const [projects, setProjects] = useState({});
+  const [expandedClients, setExpandedClients] = useState({});
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   useEffect(() => {
     loadClients();
@@ -24,7 +30,37 @@ function Clients() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const loadProjectsForClient = async (clientId) => {
+    if (projects[clientId]) {
+      // Already loaded
+      return;
+    }
+
+    try {
+      const res = await projectsAPI.getAll({ client_id: clientId });
+      setProjects(prev => ({
+        ...prev,
+        [clientId]: res.data
+      }));
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
+  const toggleClient = (clientId) => {
+    const isExpanding = !expandedClients[clientId];
+
+    setExpandedClients(prev => ({
+      ...prev,
+      [clientId]: isExpanding
+    }));
+
+    if (isExpanding) {
+      loadProjectsForClient(clientId);
+    }
+  };
+
+  const handleDeleteClient = async (id) => {
     if (window.confirm('Are you sure you want to delete this client? This will not delete associated tests.')) {
       try {
         await clientsAPI.delete(id);
@@ -36,20 +72,58 @@ function Clients() {
     }
   };
 
+  const handleDeleteProject = async (projectId, clientId) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectsAPI.delete(projectId);
+        // Refresh projects for this client
+        const res = await projectsAPI.getAll({ client_id: clientId });
+        setProjects(prev => ({
+          ...prev,
+          [clientId]: res.data
+        }));
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        alert(error.response?.data?.error || 'Failed to delete project');
+      }
+    }
+  };
+
   const handleClientSaved = () => {
-    setShowModal(false);
+    setShowClientModal(false);
     setSelectedClient(null);
     loadClients();
+  };
+
+  const handleProjectSaved = () => {
+    setShowProjectModal(false);
+    if (selectedClient) {
+      loadProjectsForClient(selectedClient.id);
+    }
+    setSelectedProject(null);
+  };
+
+  const openNewProjectModal = (client) => {
+    setSelectedClient(client);
+    setSelectedProject(null);
+    setShowProjectModal(true);
+  };
+
+  const getTestId = (client, project, test) => {
+    const clientNum = client.client_number || '###';
+    const projectNum = project.project_number || '###';
+    const testNum = test.test_number || '###';
+    return `${clientNum}-${projectNum}-${testNum}`;
   };
 
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Clients</h2>
-          <p>Manage your client contacts</p>
+          <h2>Clients & Projects</h2>
+          <p>Manage clients, projects, and their tests</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
           <Plus size={20} />
           Add Client
         </button>
@@ -62,19 +136,34 @@ function Clients() {
         {loading ? (
           <div className="loading">Loading clients...</div>
         ) : clients.length > 0 ? (
-          <div className="grid grid-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {clients.map(client => (
               <div key={client.id} className="card" style={{ margin: 0 }}>
+                {/* Client Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', cursor: 'pointer' }}
+                      onClick={() => toggleClient(client.id)}
+                    >
+                      <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                        {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      </button>
                       <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
                         <UsersIcon size={20} />
                       </div>
-                      <h3 style={{ margin: 0 }}>{client.name}</h3>
+                      <div>
+                        <h3 style={{ margin: 0 }}>{client.name}</h3>
+                        {client.client_number && (
+                          <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                            Client #{client.client_number}
+                          </div>
+                        )}
+                      </div>
                     </div>
+
                     {client.contact_email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
                         <Mail size={16} />
                         <a href={`mailto:${client.contact_email}`} style={{ color: '#3b82f6' }}>
                           {client.contact_email}
@@ -82,22 +171,135 @@ function Clients() {
                       </div>
                     )}
                     {client.contact_phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
                         <Phone size={16} />
                         <span>{client.contact_phone}</span>
                       </div>
                     )}
-                    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#64748b' }}>
-                      Added {new Date(client.created_at).toLocaleDateString()}
-                    </div>
                   </div>
                   <button
                     className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(client.id)}
+                    onClick={() => handleDeleteClient(client.id)}
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
+
+                {/* Expanded Projects Section */}
+                {expandedClients[client.id] && (
+                  <div style={{ marginTop: '1.5rem', marginLeft: '44px', borderLeft: '2px solid #e2e8f0', paddingLeft: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+                        Projects ({projects[client.id]?.length || 0})
+                      </h4>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => openNewProjectModal(client)}
+                      >
+                        <Plus size={16} />
+                        Add Project
+                      </button>
+                    </div>
+
+                    {projects[client.id] && projects[client.id].length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {projects[client.id].map(project => (
+                          <div key={project.id} style={{
+                            padding: '1rem',
+                            background: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                  <FolderOpen size={18} color="#3b82f6" />
+                                  <h4 style={{ margin: 0, fontSize: '1rem' }}>
+                                    {project.project_name}
+                                  </h4>
+                                  <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                    {project.status}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                                  Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                                </div>
+                                {project.description && (
+                                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
+                                    {project.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setSelectedProject(project);
+                                    setShowProjectModal(true);
+                                  }}
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeleteProject(project.id, client.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Show tests in project */}
+                            {project.tests && project.tests.length > 0 && (
+                              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>
+                                  Tests:
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                  {project.tests.map(test => (
+                                    <Link
+                                      key={test.id}
+                                      to={`/tests/${test.id}`}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.5rem',
+                                        background: 'white',
+                                        borderRadius: '4px',
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                        border: '1px solid #e2e8f0'
+                                      }}
+                                      className="hover-lift"
+                                    >
+                                      <FileText size={14} color="#64748b" />
+                                      <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#3b82f6' }}>
+                                        {getTestId(client, project, test)}
+                                      </span>
+                                      <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                                        {test.title}
+                                      </span>
+                                      <span className={`badge badge-${test.status === 'completed' ? 'success' : test.status === 'in-progress' ? 'warning' : 'info'}`} style={{ marginLeft: 'auto' }}>
+                                        {test.status}
+                                      </span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                        <FolderOpen size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                        <p style={{ margin: 0, fontSize: '0.875rem' }}>No projects yet</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -107,21 +309,33 @@ function Clients() {
               <UsersIcon size={48} />
             </div>
             <p>No clients yet</p>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
               Add Your First Client
             </button>
           </div>
         )}
       </div>
 
-      {showModal && (
+      {showClientModal && (
         <ClientModal
           client={selectedClient}
           onClose={() => {
-            setShowModal(false);
+            setShowClientModal(false);
             setSelectedClient(null);
           }}
           onSuccess={handleClientSaved}
+        />
+      )}
+
+      {showProjectModal && (
+        <ProjectModal
+          project={selectedProject}
+          client={selectedClient}
+          onClose={() => {
+            setShowProjectModal(false);
+            setSelectedProject(null);
+          }}
+          onSuccess={handleProjectSaved}
         />
       )}
     </div>

@@ -71,6 +71,16 @@ export const clientsAPI = {
   delete: (id) => api.delete(`/clients/${id}`),
 };
 
+// Projects API
+export const projectsAPI = {
+  getAll: (params) => api.get('/projects', { params }),
+  getById: (id) => api.get(`/projects/${id}`),
+  create: (data) => api.post('/projects', data),
+  update: (id, data) => api.put(`/projects/${id}`, data),
+  delete: (id) => api.delete(`/projects/${id}`),
+  getNextTestNumber: (id) => api.get(`/projects/${id}/next-test-number`),
+};
+
 // Media API
 export const mediaAPI = {
   getByTest: (testId) => api.get(`/media/test/${testId}`),

@@ -140,35 +140,61 @@ router.get('/:id', (req, res) => {
 
 // Create new test
 router.post('/', (req, res) => {
-  const { title, description, test_type, governing_standard, location, client_id, test_date, status, tags } = req.body;
+  const { title, description, test_type, governing_standard, location, client_id, project_id, test_date, status, tags } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
   }
 
-  db.run(
-    `INSERT INTO tests (title, description, test_type, governing_standard, location, client_id, test_date, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [title, description, test_type, governing_standard, location, client_id, test_date, status || 'pending'],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      const testId = this.lastID;
-
-      // Add tags if provided
-      if (tags && Array.isArray(tags) && tags.length > 0) {
-        const stmt = db.prepare('INSERT INTO test_tags (test_id, tag) VALUES (?, ?)');
-        tags.forEach(tag => {
-          stmt.run(testId, tag);
-        });
-        stmt.finalize();
-      }
-
-      res.status(201).json({ id: testId, message: 'Test created successfully' });
+  // Auto-generate test number if project_id is provided
+  const generateTestNumber = (callback) => {
+    if (!project_id) {
+      return callback(null);
     }
-  );
+
+    db.get(
+      `SELECT MAX(CAST(test_number AS INTEGER)) as max_number
+       FROM tests
+       WHERE project_id = ? AND test_number IS NOT NULL`,
+      [project_id],
+      (err, result) => {
+        if (err) return callback(err);
+        const nextNumber = (result.max_number || 0) + 1;
+        const formattedNumber = String(nextNumber).padStart(3, '0');
+        callback(null, formattedNumber);
+      }
+    );
+  };
+
+  generateTestNumber((err, test_number) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    db.run(
+      `INSERT INTO tests (title, description, test_type, governing_standard, location, client_id, project_id, test_number, test_date, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, description, test_type, governing_standard, location, client_id, project_id, test_number, test_date, status || 'pending'],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        const testId = this.lastID;
+
+        // Add tags if provided
+        if (tags && Array.isArray(tags) && tags.length > 0) {
+          const stmt = db.prepare('INSERT INTO test_tags (test_id, tag) VALUES (?, ?)');
+          tags.forEach(tag => {
+            stmt.run(testId, tag);
+          });
+          stmt.finalize();
+        }
+
+        res.status(201).json({ id: testId, test_number, message: 'Test created successfully' });
+      }
+    );
+  });
 });
 
 // Update test
