@@ -113,49 +113,23 @@ function GlobalSearch() {
       </div>
 
       {showResults && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 8px)',
-          left: 0,
-          right: 0,
-          background: 'white',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          maxHeight: '400px',
-          overflowY: 'auto',
-          zIndex: 1000
-        }}>
+        <div className="search-dropdown">
           {loading ? (
-            <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>
+            <div style={{ padding: '1rem', textAlign: 'center' }} className="text-muted">
               Searching...
             </div>
           ) : totalResults > 0 ? (
             <>
               {results.tests.length > 0 && (
                 <div>
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    background: '#f9fafb',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
+                  <div className="search-section-header">
                     Tests ({results.tests.length})
                   </div>
                   {results.tests.map(test => (
                     <div
                       key={test.id}
                       onClick={() => handleResultClick('test', test.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      className="search-result-item"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
@@ -186,29 +160,14 @@ function GlobalSearch() {
 
               {results.calibrations.length > 0 && (
                 <div>
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    background: '#f9fafb',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
+                  <div className="search-section-header">
                     Equipment ({results.calibrations.length})
                   </div>
                   {results.calibrations.map(cal => (
                     <div
                       key={cal.id}
                       onClick={() => handleResultClick('calibration', cal.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      className="search-result-item"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
@@ -238,29 +197,14 @@ function GlobalSearch() {
 
               {results.clients.length > 0 && (
                 <div>
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    background: '#f9fafb',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
+                  <div className="search-section-header">
                     Clients ({results.clients.length})
                   </div>
                   {results.clients.map(client => (
                     <div
                       key={client.id}
                       onClick={() => handleResultClick('client', client.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      className="search-result-item"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
@@ -291,29 +235,14 @@ function GlobalSearch() {
 
               {results.projects.length > 0 && (
                 <div>
-                  <div style={{
-                    padding: '0.75rem 1rem',
-                    background: '#f9fafb',
-                    fontWeight: 600,
-                    fontSize: '0.75rem',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                  }}>
+                  <div className="search-section-header">
                     Projects ({results.projects.length})
                   </div>
                   {results.projects.map(project => (
                     <div
                       key={project.id}
                       onClick={() => handleResultClick('project', project.id)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        borderBottom: '1px solid #e5e7eb',
-                        cursor: 'pointer',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                      className="search-result-item"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
