@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clientsAPI, projectsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
 
 function Clients() {
+  const { user, isClient, isFRAEmployee, isAdmin } = useAuth();
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState({});
   const [expandedClients, setExpandedClients] = useState({});
@@ -23,7 +25,19 @@ function Clients() {
   const loadClients = async () => {
     try {
       const res = await clientsAPI.getAll();
-      setClients(res.data);
+
+      // If user is a client, filter to show only their client
+      if (isClient() && user.client_id) {
+        const clientData = res.data.filter(c => c.id === user.client_id);
+        setClients(clientData);
+        // Auto-expand for client users
+        if (clientData.length > 0) {
+          setExpandedClients({ [clientData[0].id]: true });
+          loadProjectsForClient(clientData[0].id);
+        }
+      } else {
+        setClients(res.data);
+      }
     } catch (error) {
       console.error('Error loading clients:', error);
     } finally {
@@ -165,13 +179,15 @@ function Clients() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Clients & Projects</h2>
-          <p>Manage clients, projects, and their tests</p>
+          <h2>{isClient() ? 'My Projects & Tests' : 'Clients & Projects'}</h2>
+          <p>{isClient() ? 'View your projects and test results' : 'Manage clients, projects, and their tests'}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
-          <Plus size={20} />
-          Add Client
-        </button>
+        {!isClient() && (
+          <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
+            <Plus size={20} />
+            Add Client
+          </button>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -245,12 +261,14 @@ function Clients() {
                       </div>
                     )}
                   </div>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDeleteClient(client.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {!isClient() && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteClient(client.id)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
 
                 {/* Expanded Projects Section */}
@@ -260,13 +278,15 @@ function Clients() {
                       <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
                         Projects ({projects[client.id]?.length || 0})
                       </h4>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => openNewProjectModal(client)}
-                      >
-                        <Plus size={16} />
-                        Add Project
-                      </button>
+                      {!isClient() && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => openNewProjectModal(client)}
+                        >
+                          <Plus size={16} />
+                          Add Project
+                        </button>
+                      )}
                     </div>
 
                     {projects[client.id] && projects[client.id].length > 0 ? (
@@ -298,24 +318,26 @@ function Clients() {
                                   </p>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                  className="btn btn-secondary btn-sm"
-                                  onClick={() => {
-                                    setSelectedClient(client);
-                                    setSelectedProject(project);
-                                    setShowProjectModal(true);
-                                  }}
-                                >
-                                  <Edit2 size={14} />
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleDeleteProject(project.id, client.id)}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
+                              {!isClient() && (
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => {
+                                      setSelectedClient(client);
+                                      setSelectedProject(project);
+                                      setShowProjectModal(true);
+                                    }}
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => handleDeleteProject(project.id, client.id)}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
 
                             {/* Show tests in project */}
