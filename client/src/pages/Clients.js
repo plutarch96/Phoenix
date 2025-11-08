@@ -99,6 +99,11 @@ function Clients() {
   const handleProjectSaved = () => {
     setShowProjectModal(false);
     if (selectedClient) {
+      // Auto-expand the client
+      setExpandedClients(prev => ({
+        ...prev,
+        [selectedClient.id]: true
+      }));
       // Force reload to show newly created project
       loadProjectsForClient(selectedClient.id, true);
     }
@@ -108,6 +113,8 @@ function Clients() {
   const openNewProjectModal = (client) => {
     setSelectedClient(client);
     setSelectedProject(null);
+    // Load projects first to check for duplicates
+    loadProjectsForClient(client.id);
     setShowProjectModal(true);
   };
 

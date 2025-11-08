@@ -17,15 +17,25 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
     setLoading(true);
 
     try {
+      // Ensure client_id is set correctly
+      const submitData = {
+        ...formData,
+        client_id: formData.client_id || client?.id
+      };
+
+      console.log('Submitting project:', submitData); // Debug log
+
       if (project) {
-        await projectsAPI.update(project.id, formData);
+        await projectsAPI.update(project.id, submitData);
       } else {
-        await projectsAPI.create(formData);
+        const response = await projectsAPI.create(submitData);
+        console.log('Project created:', response.data); // Debug log
       }
 
       onSuccess();
     } catch (error) {
       console.error('Error saving project:', error);
+      console.error('Error details:', error.response?.data); // More debug info
       alert('Failed to save project: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
