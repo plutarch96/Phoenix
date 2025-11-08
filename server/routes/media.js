@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit for videos
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 } // 10GB max (for videos)
 });
 
 // Get all media for a test
@@ -74,6 +74,31 @@ const validateFileType = (filename, category) => {
   return allowedTypes[category]?.includes(ext) || false;
 };
 
+// File size limits based on type
+const getFileSizeLimit = (filename, category) => {
+  const ext = path.extname(filename).toLowerCase();
+
+  // Different limits based on file type
+  if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext.substring(1))) {
+    return 200 * 1024 * 1024; // 200MB for images
+  } else if (['mp4', 'avi', 'mov', 'mkv', 'webm'].includes(ext.substring(1))) {
+    return 10 * 1024 * 1024 * 1024; // 10GB for videos
+  } else if (ext === '.pdf') {
+    return 1 * 1024 * 1024 * 1024; // 1GB for PDFs
+  } else if (category === 'test_data') {
+    return 1 * 1024 * 1024 * 1024; // 1GB for test data
+  }
+
+  return 1 * 1024 * 1024 * 1024; // 1GB default
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+};
+
 // Upload media file(s)
 router.post('/upload', upload.array('files', 10), (req, res) => {
   const { test_id, category, description } = req.body;
@@ -93,6 +118,21 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   if (invalidFiles.length > 0) {
     return res.status(400).json({
       error: `Invalid file types for category '${category}': ${invalidFiles.map(f => f.originalname).join(', ')}`
+    });
+  }
+
+  // Validate file sizes
+  const oversizedFiles = [];
+  req.files.forEach(file => {
+    const limit = getFileSizeLimit(file.originalname, category);
+    if (file.size > limit) {
+      oversizedFiles.push(`${file.originalname} (${formatFileSize(file.size)} exceeds ${formatFileSize(limit)})`);
+    }
+  });
+
+  if (oversizedFiles.length > 0) {
+    return res.status(400).json({
+      error: 'The following files exceed the size limit:\n\n' + oversizedFiles.join('\n')
     });
   }
 

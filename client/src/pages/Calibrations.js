@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, AlertTriangle, FileText, Trash2, Edit2 } from 'lucide-react';
 import { calibrationsAPI } from '../services/api';
 import CalibrationModal from '../components/CalibrationModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function Calibrations() {
   const [calibrations, setCalibrations] = useState([]);
@@ -9,6 +10,7 @@ function Calibrations() {
   const [showModal, setShowModal] = useState(false);
   const [selectedCalibration, setSelectedCalibration] = useState(null);
   const [filter, setFilter] = useState('all'); // all, valid, expired
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadCalibrations();
@@ -25,16 +27,22 @@ function Calibrations() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this calibration?')) {
-      try {
-        await calibrationsAPI.delete(id);
-        loadCalibrations();
-      } catch (error) {
-        console.error('Error deleting calibration:', error);
-        alert('Failed to delete calibration');
-      }
-    }
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      title: 'Delete Calibration',
+      message: 'Are you sure you want to delete this calibration equipment record? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await calibrationsAPI.delete(id);
+          loadCalibrations();
+        } catch (error) {
+          console.error('Error deleting calibration:', error);
+          alert('Failed to delete calibration');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   const handleCalibrationSaved = () => {
@@ -225,6 +233,15 @@ function Calibrations() {
             setSelectedCalibration(null);
           }}
           onSuccess={handleCalibrationSaved}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
         />
       )}
     </div>

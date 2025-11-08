@@ -19,6 +19,7 @@ import MediaUpload from '../components/MediaUpload';
 import CalibrationSelector from '../components/CalibrationSelector';
 import TestStream from '../components/TestStream';
 import TestModal from '../components/TestModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function TestDetail() {
   const { id } = useParams();
@@ -30,6 +31,7 @@ function TestDetail() {
   const [showCalibrationSelector, setShowCalibrationSelector] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
   const [clients, setClients] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadTest();
@@ -61,16 +63,22 @@ function TestDetail() {
     loadTest();
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this test?')) {
-      try {
-        await testsAPI.delete(id);
-        navigate('/tests');
-      } catch (error) {
-        console.error('Error deleting test:', error);
-        alert('Failed to delete test');
-      }
-    }
+  const handleDelete = () => {
+    setConfirmDialog({
+      title: 'Delete Test',
+      message: 'Are you sure you want to delete this test? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await testsAPI.delete(id);
+          navigate('/tests');
+        } catch (error) {
+          console.error('Error deleting test:', error);
+          alert('Failed to delete test');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   const handleMediaUploaded = () => {
@@ -84,26 +92,38 @@ function TestDetail() {
     loadTest();
   };
 
-  const handleRemoveCalibration = async (calibrationId) => {
-    if (window.confirm('Remove this calibration from the test?')) {
-      try {
-        await testsAPI.removeCalibration(id, calibrationId);
-        loadTest();
-      } catch (error) {
-        console.error('Error removing calibration:', error);
-      }
-    }
+  const handleRemoveCalibration = (calibrationId) => {
+    setConfirmDialog({
+      title: 'Remove Calibration',
+      message: 'Are you sure you want to remove this calibration equipment from the test?',
+      onConfirm: async () => {
+        try {
+          await testsAPI.removeCalibration(id, calibrationId);
+          loadTest();
+        } catch (error) {
+          console.error('Error removing calibration:', error);
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
-  const handleDeleteMedia = async (mediaId) => {
-    if (window.confirm('Delete this media file?')) {
-      try {
-        await mediaAPI.delete(mediaId);
-        loadTest();
-      } catch (error) {
-        console.error('Error deleting media:', error);
-      }
-    }
+  const handleDeleteMedia = (mediaId) => {
+    setConfirmDialog({
+      title: 'Delete Media File',
+      message: 'Are you sure you want to delete this media file? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await mediaAPI.delete(mediaId);
+          loadTest();
+        } catch (error) {
+          console.error('Error deleting media:', error);
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   const handleDownloadCategory = (category) => {
@@ -255,64 +275,50 @@ function TestDetail() {
 
       {/* 1. TEST SUMMARY */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ marginBottom: '0.5rem' }}>{test.title}</h2>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-              <span className={`badge ${getStatusBadge(test.status)}`}>
-                {test.status}
-              </span>
-              {test.test_date && (
-                <span style={{ color: '#64748b' }}>
-                  📅 {formatDate(test.test_date)}
-                </span>
-              )}
-              {test.test_type && (
-                <span style={{ color: '#64748b' }}>
-                  📊 Type: {test.test_type}
-                </span>
-              )}
-              {test.governing_standard && (
-                <span style={{ color: '#64748b', fontWeight: 500 }}>
-                  📋 Standard: {test.governing_standard}
-                </span>
-              )}
-            </div>
-            {test.description && (
-              <p style={{ color: '#64748b', marginBottom: '1rem' }}>{test.description}</p>
-            )}
-            {test.location && (
-              <div style={{ marginBottom: '0.5rem' }}>
-                <strong>Location:</strong> {test.location}
-              </div>
-            )}
-            {test.client_name && (
-              <div>
-                <strong>Client:</strong> {test.client_name}
-              </div>
-            )}
-            {test.tags && test.tags.length > 0 && (
-              <div style={{ marginTop: '1rem' }}>
-                <strong>Tags:</strong>
-                <div className="tags" style={{ marginTop: '0.5rem' }}>
-                  {test.tags.map((tag, i) => (
-                    <span key={i} className="tag">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-secondary" onClick={() => setShowTestModal(true)}>
-              <Edit size={20} />
-              Edit
-            </button>
-            <button className="btn btn-danger" onClick={handleDelete}>
-              <Trash2 size={20} />
-              Delete
-            </button>
-          </div>
+        <h2 style={{ marginBottom: '0.5rem' }}>{test.title}</h2>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <span className={`badge ${getStatusBadge(test.status)}`}>
+            {test.status}
+          </span>
+          {test.test_date && (
+            <span style={{ color: '#64748b' }}>
+              📅 {formatDate(test.test_date)}
+            </span>
+          )}
+          {test.test_type && (
+            <span style={{ color: '#64748b' }}>
+              📊 Type: {test.test_type}
+            </span>
+          )}
+          {test.governing_standard && (
+            <span style={{ color: '#64748b', fontWeight: 500 }}>
+              📋 Standard: {test.governing_standard}
+            </span>
+          )}
         </div>
+        {test.description && (
+          <p style={{ color: '#64748b', marginBottom: '1rem' }}>{test.description}</p>
+        )}
+        {test.location && (
+          <div style={{ marginBottom: '0.5rem' }}>
+            <strong>Location:</strong> {test.location}
+          </div>
+        )}
+        {test.client_name && (
+          <div>
+            <strong>Client:</strong> {test.client_name}
+          </div>
+        )}
+        {test.tags && test.tags.length > 0 && (
+          <div style={{ marginTop: '1rem' }}>
+            <strong>Tags:</strong>
+            <div className="tags" style={{ marginTop: '0.5rem' }}>
+              {test.tags.map((tag, i) => (
+                <span key={i} className="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. LIVE STREAM */}
@@ -544,6 +550,20 @@ function TestDetail() {
         )}
       </div>
 
+      {/* EDIT/DELETE ACTIONS */}
+      <div className="card">
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <button className="btn btn-secondary" onClick={() => setShowTestModal(true)}>
+            <Edit size={20} />
+            Edit Test
+          </button>
+          <button className="btn btn-danger" onClick={handleDelete}>
+            <Trash2 size={20} />
+            Delete Test
+          </button>
+        </div>
+      </div>
+
       {showMediaUpload && (
         <MediaUpload
           testId={id}
@@ -570,6 +590,15 @@ function TestDetail() {
           clients={clients}
           onClose={() => setShowTestModal(false)}
           onSuccess={handleTestUpdated}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
         />
       )}
     </div>

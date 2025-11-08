@@ -5,6 +5,7 @@ import { clientsAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function Clients() {
   const { user, isClient, isFRAEmployee, isAdmin } = useAuth();
@@ -17,6 +18,7 @@ function Clients() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadClients();
@@ -82,33 +84,45 @@ function Clients() {
     }
   };
 
-  const handleDeleteClient = async (id) => {
-    if (window.confirm('Are you sure you want to delete this client? This will not delete associated tests.')) {
-      try {
-        await clientsAPI.delete(id);
-        loadClients();
-      } catch (error) {
-        console.error('Error deleting client:', error);
-        alert('Failed to delete client');
-      }
-    }
+  const handleDeleteClient = (id) => {
+    setConfirmDialog({
+      title: 'Delete Client',
+      message: 'Are you sure you want to delete this client? Associated tests will not be deleted.',
+      onConfirm: async () => {
+        try {
+          await clientsAPI.delete(id);
+          loadClients();
+        } catch (error) {
+          console.error('Error deleting client:', error);
+          alert('Failed to delete client');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
-  const handleDeleteProject = async (projectId, clientId) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await projectsAPI.delete(projectId);
-        // Refresh projects for this client
-        const res = await projectsAPI.getAll({ client_id: clientId });
-        setProjects(prev => ({
-          ...prev,
-          [clientId]: res.data
-        }));
-      } catch (error) {
-        console.error('Error deleting project:', error);
-        alert(error.response?.data?.error || 'Failed to delete project');
-      }
-    }
+  const handleDeleteProject = (projectId, clientId) => {
+    setConfirmDialog({
+      title: 'Delete Project',
+      message: 'Are you sure you want to delete this project? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await projectsAPI.delete(projectId);
+          // Refresh projects for this client
+          const res = await projectsAPI.getAll({ client_id: clientId });
+          setProjects(prev => ({
+            ...prev,
+            [clientId]: res.data
+          }));
+        } catch (error) {
+          console.error('Error deleting project:', error);
+          alert(error.response?.data?.error || 'Failed to delete project');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
   };
 
   const handleClientSaved = () => {
@@ -223,50 +237,40 @@ function Clients() {
             {filteredClients.map(client => (
               <div key={client.id} className="card" style={{ margin: 0 }}>
                 {/* Client Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', cursor: 'pointer' }}
-                      onClick={() => toggleClient(client.id)}
-                    >
-                      <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                        {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                      </button>
-                      <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
-                        <UsersIcon size={20} />
-                      </div>
-                      <div>
-                        <h3 style={{ margin: 0 }}>{client.name}</h3>
-                        {client.client_number && (
-                          <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                            Client #{client.client_number}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {client.contact_email && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
-                        <Mail size={16} />
-                        <a href={`mailto:${client.contact_email}`} style={{ color: '#3b82f6' }}>
-                          {client.contact_email}
-                        </a>
-                      </div>
-                    )}
-                    {client.contact_phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
-                        <Phone size={16} />
-                        <span>{client.contact_phone}</span>
-                      </div>
-                    )}
-                  </div>
-                  {!isClient() && (
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteClient(client.id)}
-                    >
-                      <Trash2 size={16} />
+                <div>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', cursor: 'pointer' }}
+                    onClick={() => toggleClient(client.id)}
+                  >
+                    <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                      {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                     </button>
+                    <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
+                      <UsersIcon size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0 }}>{client.name}</h3>
+                      {client.client_number && (
+                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                          Client #{client.client_number}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {client.contact_email && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
+                      <Mail size={16} />
+                      <a href={`mailto:${client.contact_email}`} style={{ color: '#3b82f6' }}>
+                        {client.contact_email}
+                      </a>
+                    </div>
+                  )}
+                  {client.contact_phone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', marginLeft: '44px' }}>
+                      <Phone size={16} />
+                      <span>{client.contact_phone}</span>
+                    </div>
                   )}
                 </div>
 
@@ -297,47 +301,23 @@ function Clients() {
                             borderRadius: '8px',
                             border: '1px solid #e2e8f0'
                           }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                  <FolderOpen size={18} color="#3b82f6" />
-                                  <h4 style={{ margin: 0, fontSize: '1rem' }}>
-                                    {project.project_name}
-                                  </h4>
-                                  <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
-                                    {project.status}
-                                  </span>
-                                </div>
-                                <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                                  Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
-                                </div>
-                                {project.description && (
-                                  <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-                                    {project.description}
-                                  </p>
-                                )}
-                              </div>
-                              {!isClient() && (
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                  <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => {
-                                      setSelectedClient(client);
-                                      setSelectedProject(project);
-                                      setShowProjectModal(true);
-                                    }}
-                                  >
-                                    <Edit2 size={14} />
-                                  </button>
-                                  <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => handleDeleteProject(project.id, client.id)}
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <FolderOpen size={18} color="#3b82f6" />
+                              <h4 style={{ margin: 0, fontSize: '1rem' }}>
+                                {project.project_name}
+                              </h4>
+                              <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                {project.status}
+                              </span>
                             </div>
+                            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                              Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                            </div>
+                            {project.description && (
+                              <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
+                                {project.description}
+                              </p>
+                            )}
 
                             {/* Show tests in project */}
                             {project.tests && project.tests.length > 0 && (
@@ -392,6 +372,30 @@ function Clients() {
                                 </div>
                               </div>
                             )}
+
+                            {/* Project Actions */}
+                            {!isClient() && (
+                              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setSelectedClient(client);
+                                    setSelectedProject(project);
+                                    setShowProjectModal(true);
+                                  }}
+                                >
+                                  <Edit2 size={14} />
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeleteProject(project.id, client.id)}
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -401,6 +405,19 @@ function Clients() {
                         <p style={{ margin: 0, fontSize: '0.875rem' }}>No projects yet</p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Client Actions */}
+                {!isClient() && (
+                  <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteClient(client.id)}
+                    >
+                      <Trash2 size={16} />
+                      Delete Client
+                    </button>
                   </div>
                 )}
               </div>
@@ -445,6 +462,15 @@ function Clients() {
             setSelectedProject(null);
           }}
           onSuccess={handleProjectSaved}
+        />
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
         />
       )}
     </div>

@@ -10,7 +10,48 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
+
+    // Validate file sizes based on category
+    const limits = getFileSizeLimits();
+    const invalidFiles = [];
+
+    for (const file of selectedFiles) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      let maxSize = limits.default;
+
+      // Determine max size based on file type
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
+        maxSize = limits.image;
+      } else if (['mp4', 'avi', 'mov', 'mkv', 'webm'].includes(ext)) {
+        maxSize = limits.video;
+      } else if (ext === 'pdf') {
+        maxSize = limits.pdf;
+      } else if (category === 'test_data') {
+        maxSize = limits.testData;
+      }
+
+      if (file.size > maxSize) {
+        invalidFiles.push(`${file.name} (${formatFileSize(file.size)} exceeds ${formatFileSize(maxSize)})`);
+      }
+    }
+
+    if (invalidFiles.length > 0) {
+      alert('The following files exceed the size limit:\n\n' + invalidFiles.join('\n'));
+      e.target.value = '';
+      return;
+    }
+
     setFiles(selectedFiles);
+  };
+
+  const getFileSizeLimits = () => {
+    return {
+      testData: 1 * 1024 * 1024 * 1024,   // 1GB for test data
+      video: 10 * 1024 * 1024 * 1024,      // 10GB for videos
+      image: 200 * 1024 * 1024,            // 200MB for images
+      pdf: 1 * 1024 * 1024 * 1024,         // 1GB for PDFs
+      default: 1 * 1024 * 1024 * 1024      // 1GB default
+    };
   };
 
   const handleSubmit = async (e) => {
@@ -62,7 +103,8 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
   };
 
   const getCategoryInfo = () => {
@@ -70,22 +112,26 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
       test_data: {
         title: 'Upload Test Data Files',
         accept: '.csv,.xlsx,.xls,.json,.txt,.dat',
-        description: 'CSV, Excel, JSON, TXT, DAT files'
+        description: 'CSV, Excel, JSON, TXT, DAT files',
+        sizeInfo: 'Max 1GB per file'
       },
       media: {
         title: 'Upload Media Files',
         accept: 'image/*,video/*',
-        description: 'Images (JPG, PNG, GIF) and Videos (MP4, AVI, MOV, etc.)'
+        description: 'Images (JPG, PNG, GIF) and Videos (MP4, AVI, MOV, etc.)',
+        sizeInfo: 'Max 200MB for images, 10GB for videos'
       },
       calibration: {
         title: 'Upload Calibration PDF',
         accept: '.pdf',
-        description: 'PDF files only'
+        description: 'PDF files only',
+        sizeInfo: 'Max 1GB per file'
       },
       other: {
         title: 'Upload Documents',
         accept: '.pdf,.doc,.docx,.txt,image/*',
-        description: 'PDF, Word, Text, and Image files'
+        description: 'PDF, Word, Text, and Image files',
+        sizeInfo: 'Max 1GB for PDFs, 200MB for images'
       }
     };
     return categoryInfo[category] || categoryInfo.media;
@@ -114,7 +160,7 @@ function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
               style={{ width: '100%' }}
             />
             <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-              Supported: {info.description} (max 500MB per file)
+              Supported: {info.description} ({info.sizeInfo})
             </p>
           </div>
 
