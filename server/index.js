@@ -3,11 +3,15 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
 // Initialize database
 const db = require('./db/database');
 
 // Import routes
+const authRouter = require('./routes/auth');
 const testsRouter = require('./routes/tests');
 const calibrationsRouter = require('./routes/calibrations');
 const clientsRouter = require('./routes/clients');
@@ -27,8 +31,27 @@ const io = socketIo(server, {
 
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Security Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Allow for development; configure properly in production
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
+// CORS
+const corsOptions = {
+  origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true
+};
+app.use(cors(corsOptions));
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,6 +59,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
+app.use('/api/auth', authRouter);
 app.use('/api/tests', testsRouter);
 app.use('/api/calibrations', calibrationsRouter);
 app.use('/api/clients', clientsRouter);
