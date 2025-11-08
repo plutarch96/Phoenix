@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { X, Shield, Briefcase, User as UserIcon } from 'lucide-react';
 import { authAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
-function UserModal({ clients, onClose, onSuccess }) {
+function UserModal({ user, clients, onClose, onSuccess }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
+    username: user?.username || '',
+    email: user?.email || '',
     password: '',
-    role: '',
-    client_id: ''
+    role: user?.role || '',
+    client_id: user?.client_id || '',
+    is_active: user?.is_active !== undefined ? user.is_active : 1
   });
   const [loading, setLoading] = useState(false);
 
@@ -22,12 +25,22 @@ function UserModal({ clients, onClose, onSuccess }) {
         client_id: formData.role === 'client' ? formData.client_id : null
       };
 
-      await authAPI.register(data);
-      alert('User created successfully! They can now log in with their credentials.');
+      // Remove password if empty (when editing and not changing password)
+      if (user && !data.password) {
+        delete data.password;
+      }
+
+      if (user) {
+        await authAPI.updateUser(user.id, data);
+        toast.success('User updated successfully');
+      } else {
+        await authAPI.register(data);
+        toast.success('User created successfully! They can now log in with their credentials.');
+      }
       onSuccess();
     } catch (error) {
-      console.error('Error creating user:', error);
-      alert(error.response?.data?.error || 'Failed to create user');
+      console.error('Error saving user:', error);
+      toast.error(error.response?.data?.error || `Failed to ${user ? 'update' : 'create'} user`);
     } finally {
       setLoading(false);
     }
