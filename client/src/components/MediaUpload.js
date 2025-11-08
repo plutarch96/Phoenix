@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { X, Upload, Image, Video, FileText } from 'lucide-react';
 import { mediaAPI } from '../services/api';
 
-function MediaUpload({ testId, onClose, onSuccess }) {
+function MediaUpload({ testId, category = 'media', onClose, onSuccess }) {
   const [files, setFiles] = useState([]);
-  const [mediaType, setMediaType] = useState('auto');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -28,10 +27,7 @@ function MediaUpload({ testId, onClose, onSuccess }) {
     try {
       const formData = new FormData();
       formData.append('test_id', testId);
-
-      if (mediaType !== 'auto') {
-        formData.append('media_type', mediaType);
-      }
+      formData.append('category', category);
 
       if (description) {
         formData.append('description', description);
@@ -47,7 +43,7 @@ function MediaUpload({ testId, onClose, onSuccess }) {
       onSuccess();
     } catch (error) {
       console.error('Error uploading media:', error);
-      alert('Failed to upload files');
+      alert('Failed to upload files: ' + (error.response?.data?.error || error.message));
       setLoading(false);
     }
   };
@@ -69,11 +65,39 @@ function MediaUpload({ testId, onClose, onSuccess }) {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  const getCategoryInfo = () => {
+    const categoryInfo = {
+      test_data: {
+        title: 'Upload Test Data Files',
+        accept: '.csv,.xlsx,.xls,.json,.txt,.dat',
+        description: 'CSV, Excel, JSON, TXT, DAT files'
+      },
+      media: {
+        title: 'Upload Media Files',
+        accept: 'image/*,video/*',
+        description: 'Images (JPG, PNG, GIF) and Videos (MP4, AVI, MOV, etc.)'
+      },
+      calibration: {
+        title: 'Upload Calibration PDF',
+        accept: '.pdf',
+        description: 'PDF files only'
+      },
+      other: {
+        title: 'Upload Documents',
+        accept: '.pdf,.doc,.docx,.txt,image/*',
+        description: 'PDF, Word, Text, and Image files'
+      }
+    };
+    return categoryInfo[category] || categoryInfo.media;
+  };
+
+  const info = getCategoryInfo();
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Upload Media Files</h2>
+          <h2 className="modal-title">{info.title}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} />
           </button>
@@ -86,11 +110,11 @@ function MediaUpload({ testId, onClose, onSuccess }) {
               type="file"
               multiple
               onChange={handleFileChange}
-              accept="image/*,video/*,.pdf,.csv,.txt,.doc,.docx,.xls,.xlsx"
+              accept={info.accept}
               style={{ width: '100%' }}
             />
             <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
-              Supported: Images, Videos, PDFs, CSV, Excel, and text files (max 500MB per file)
+              Supported: {info.description} (max 500MB per file)
             </p>
           </div>
 
@@ -112,20 +136,6 @@ function MediaUpload({ testId, onClose, onSuccess }) {
               </div>
             </div>
           )}
-
-          <div className="form-group">
-            <label className="form-label">Media Type</label>
-            <select
-              className="form-select"
-              value={mediaType}
-              onChange={(e) => setMediaType(e.target.value)}
-            >
-              <option value="auto">Auto-detect from file type</option>
-              <option value="image">Image</option>
-              <option value="video">Video</option>
-              <option value="datafile">Data File</option>
-            </select>
-          </div>
 
           <div className="form-group">
             <label className="form-label">Description (Optional)</label>

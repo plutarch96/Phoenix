@@ -10,7 +10,9 @@ import {
   FileText,
   Settings,
   Plus,
-  X
+  X,
+  Download,
+  FolderArchive
 } from 'lucide-react';
 import { testsAPI, mediaAPI, calibrationsAPI } from '../services/api';
 import MediaUpload from '../components/MediaUpload';
@@ -22,6 +24,7 @@ function TestDetail() {
   const [test, setTest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState(null);
   const [showCalibrationSelector, setShowCalibrationSelector] = useState(false);
 
   useEffect(() => {
@@ -53,6 +56,7 @@ function TestDetail() {
 
   const handleMediaUploaded = () => {
     setShowMediaUpload(false);
+    setUploadCategory(null);
     loadTest();
   };
 
@@ -83,6 +87,10 @@ function TestDetail() {
     }
   };
 
+  const handleDownloadCategory = (category) => {
+    window.open(`/api/media/test/${id}/download-category/${category}`, '_blank');
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'badge-warning',
@@ -93,50 +101,76 @@ function TestDetail() {
     return badges[status] || 'badge-info';
   };
 
-  const renderMedia = (media) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`;
+  };
+
+  const renderMediaFile = (media, showPreview = true) => {
     const fileUrl = `http://localhost:5000${media.file_path}`;
 
-    if (media.media_type === 'image') {
+    if (showPreview && media.media_type === 'image') {
       return (
-        <div className="media-item">
+        <div key={media.id} className="media-item">
           <img src={fileUrl} alt={media.file_name} />
           <div className="media-item-overlay">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{media.file_name}</span>
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={() => handleDeleteMedia(media.id)}
-                style={{ padding: '0.25rem 0.5rem' }}
-              >
-                <Trash2 size={14} />
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.file_name}</span>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <a
+                  href={`/api/media/download/${media.id}`}
+                  download
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  <Download size={14} />
+                </a>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleDeleteMedia(media.id)}
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       );
-    } else if (media.media_type === 'video') {
+    } else if (showPreview && media.media_type === 'video') {
       return (
-        <div className="media-item">
+        <div key={media.id} className="media-item">
           <video controls>
             <source src={fileUrl} />
           </video>
           <div className="media-item-overlay">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{media.file_name}</span>
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={() => handleDeleteMedia(media.id)}
-                style={{ padding: '0.25rem 0.5rem' }}
-              >
-                <Trash2 size={14} />
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.file_name}</span>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <a
+                  href={`/api/media/download/${media.id}`}
+                  download
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  <Download size={14} />
+                </a>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleDeleteMedia(media.id)}
+                  style={{ padding: '0.25rem 0.5rem' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       );
     } else {
       return (
-        <div className="card" style={{ marginBottom: '0.75rem' }}>
+        <div key={media.id} className="card" style={{ marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <FileText size={24} color="#64748b" />
@@ -149,10 +183,11 @@ function TestDetail() {
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <a
-                href={fileUrl}
+                href={`/api/media/download/${media.id}`}
                 download
                 className="btn btn-primary btn-sm"
               >
+                <Download size={16} />
                 Download
               </a>
               <button
@@ -168,6 +203,11 @@ function TestDetail() {
     }
   };
 
+  const openUploadModal = (category) => {
+    setUploadCategory(category);
+    setShowMediaUpload(true);
+  };
+
   if (loading) {
     return <div className="page"><div className="loading">Loading test details...</div></div>;
   }
@@ -176,9 +216,14 @@ function TestDetail() {
     return <div className="page"><div className="empty-state">Test not found</div></div>;
   }
 
-  const images = test.media?.filter(m => m.media_type === 'image') || [];
-  const videos = test.media?.filter(m => m.media_type === 'video') || [];
-  const datafiles = test.media?.filter(m => m.media_type === 'datafile') || [];
+  // Organize media by category
+  const testDataFiles = test.media?.filter(m => m.category === 'test_data') || [];
+  const mediaFiles = test.media?.filter(m => m.category === 'media') || [];
+  const calibrationDocs = test.media?.filter(m => m.category === 'calibration') || [];
+  const otherDocs = test.media?.filter(m => m.category === 'other') || [];
+
+  const images = mediaFiles.filter(m => m.media_type === 'image');
+  const videos = mediaFiles.filter(m => m.media_type === 'video');
 
   return (
     <div className="page">
@@ -189,32 +234,42 @@ function TestDetail() {
         </Link>
       </div>
 
-      {/* Test Header */}
+      {/* 1. TEST SUMMARY */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ marginBottom: '0.5rem' }}>{test.title}</h2>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               <span className={`badge ${getStatusBadge(test.status)}`}>
                 {test.status}
               </span>
               {test.test_date && (
                 <span style={{ color: '#64748b' }}>
-                  📅 {new Date(test.test_date).toLocaleDateString()}
+                  📅 {formatDate(test.test_date)}
+                </span>
+              )}
+              {test.test_type && (
+                <span style={{ color: '#64748b' }}>
+                  📊 Type: {test.test_type}
+                </span>
+              )}
+              {test.governing_standard && (
+                <span style={{ color: '#64748b', fontWeight: 500 }}>
+                  📋 Standard: {test.governing_standard}
                 </span>
               )}
             </div>
             {test.description && (
               <p style={{ color: '#64748b', marginBottom: '1rem' }}>{test.description}</p>
             )}
+            {test.location && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Location:</strong> {test.location}
+              </div>
+            )}
             {test.client_name && (
-              <div style={{ marginTop: '1rem' }}>
+              <div>
                 <strong>Client:</strong> {test.client_name}
-                {test.contact_email && (
-                  <span style={{ marginLeft: '1rem', color: '#64748b' }}>
-                    📧 {test.contact_email}
-                  </span>
-                )}
               </div>
             )}
             {test.tags && test.tags.length > 0 && (
@@ -241,23 +296,132 @@ function TestDetail() {
         </div>
       </div>
 
-      {/* Calibration Equipment */}
+      {/* 2. TEST DATA */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            <FileText size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Test Data Files ({testDataFiles.length})
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {testDataFiles.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleDownloadCategory('test_data')}
+              >
+                <FolderArchive size={16} />
+                Download All as ZIP
+              </button>
+            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => openUploadModal('test_data')}
+            >
+              <Upload size={16} />
+              Upload Data Files
+            </button>
+          </div>
+        </div>
+        {testDataFiles.length > 0 ? (
+          testDataFiles.map(media => renderMediaFile(media, false))
+        ) : (
+          <div className="empty-state">
+            <p>No test data files uploaded yet</p>
+          </div>
+        )}
+      </div>
+
+      {/* 3. MEDIA (Images & Videos) */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            <ImageIcon size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Media ({mediaFiles.length})
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {mediaFiles.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleDownloadCategory('media')}
+              >
+                <FolderArchive size={16} />
+                Download All as ZIP
+              </button>
+            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => openUploadModal('media')}
+            >
+              <Upload size={16} />
+              Upload Media
+            </button>
+          </div>
+        </div>
+
+        {images.length > 0 && (
+          <div style={{ marginBottom: '2rem' }}>
+            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ImageIcon size={18} /> Images ({images.length})
+            </h4>
+            <div className="media-grid">
+              {images.map(media => renderMediaFile(media, true))}
+            </div>
+          </div>
+        )}
+
+        {videos.length > 0 && (
+          <div>
+            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <VideoIcon size={18} /> Videos ({videos.length})
+            </h4>
+            <div className="media-grid">
+              {videos.map(media => renderMediaFile(media, true))}
+            </div>
+          </div>
+        )}
+
+        {mediaFiles.length === 0 && (
+          <div className="empty-state">
+            <p>No media files uploaded yet</p>
+          </div>
+        )}
+      </div>
+
+      {/* 4. CALIBRATION DOCUMENTS */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
             <Settings size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Calibration Equipment
+            Calibration Documents ({calibrationDocs.length})
           </h3>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => setShowCalibrationSelector(true)}
-          >
-            <Plus size={16} />
-            Add Equipment
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {calibrationDocs.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleDownloadCategory('calibration')}
+              >
+                <FolderArchive size={16} />
+                Download All as ZIP
+              </button>
+            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowCalibrationSelector(true)}
+            >
+              <Plus size={16} />
+              Add Equipment
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => openUploadModal('calibration')}
+            >
+              <Upload size={16} />
+              Upload PDF
+            </button>
+          </div>
         </div>
         {test.calibrations && test.calibrations.length > 0 ? (
-          <div className="table-container">
+          <div className="table-container" style={{ marginBottom: '1.5rem' }}>
             <table className="table">
               <thead>
                 <tr>
@@ -276,8 +440,8 @@ function TestDetail() {
                     <tr key={cal.id}>
                       <td><strong>{cal.equipment_name}</strong></td>
                       <td>{cal.equipment_id}</td>
-                      <td>{new Date(cal.calibration_date).toLocaleDateString()}</td>
-                      <td>{new Date(cal.expiration_date).toLocaleDateString()}</td>
+                      <td>{formatDate(cal.calibration_date)}</td>
+                      <td>{formatDate(cal.expiration_date)}</td>
                       <td>
                         <span className={`badge ${isExpired ? 'badge-danger' : 'badge-success'}`}>
                           {isExpired ? 'Expired' : 'Valid'}
@@ -314,58 +478,46 @@ function TestDetail() {
             <p>No calibration equipment linked to this test</p>
           </div>
         )}
+
+        {calibrationDocs.length > 0 && (
+          <div>
+            <h4 style={{ marginBottom: '1rem' }}>Uploaded Calibration PDFs:</h4>
+            {calibrationDocs.map(media => renderMediaFile(media, false))}
+          </div>
+        )}
       </div>
 
-      {/* Media Section */}
+      {/* 5. OTHER DOCUMENTS */}
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">Media Files</h3>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => setShowMediaUpload(true)}
-          >
-            <Upload size={16} />
-            Upload Media
-          </button>
+          <h3 className="card-title">
+            <FileText size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Other Documents ({otherDocs.length})
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {otherDocs.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleDownloadCategory('other')}
+              >
+                <FolderArchive size={16} />
+                Download All as ZIP
+              </button>
+            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => openUploadModal('other')}
+            >
+              <Upload size={16} />
+              Upload Document
+            </button>
+          </div>
         </div>
-
-        {/* Images */}
-        {images.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <ImageIcon size={20} /> Images ({images.length})
-            </h4>
-            <div className="media-grid">
-              {images.map(media => renderMedia(media))}
-            </div>
-          </div>
-        )}
-
-        {/* Videos */}
-        {videos.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <VideoIcon size={20} /> Videos ({videos.length})
-            </h4>
-            <div className="media-grid">
-              {videos.map(media => renderMedia(media))}
-            </div>
-          </div>
-        )}
-
-        {/* Data Files */}
-        {datafiles.length > 0 && (
-          <div>
-            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={20} /> Data Files ({datafiles.length})
-            </h4>
-            {datafiles.map(media => renderMedia(media))}
-          </div>
-        )}
-
-        {!test.media || test.media.length === 0 && (
+        {otherDocs.length > 0 ? (
+          otherDocs.map(media => renderMediaFile(media, false))
+        ) : (
           <div className="empty-state">
-            <p>No media files uploaded yet</p>
+            <p>No other documents uploaded yet</p>
           </div>
         )}
       </div>
@@ -373,7 +525,11 @@ function TestDetail() {
       {showMediaUpload && (
         <MediaUpload
           testId={id}
-          onClose={() => setShowMediaUpload(false)}
+          category={uploadCategory}
+          onClose={() => {
+            setShowMediaUpload(false);
+            setUploadCategory(null);
+          }}
           onSuccess={handleMediaUploaded}
         />
       )}
