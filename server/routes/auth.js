@@ -1,0 +1,236 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const db = require('../db/database');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+// Register new user (admin only)
+router.post('/register', verifyToken, requireAdmin, async (req, res) => {
+  const { username, email, password, role, client_id } = req.body;
+
+  if (!username || !email || !password || !role) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  if (!['admin', 'employee', 'client'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  if (role === 'client' && !client_id) {
+    return res.status(400).json({ error: 'client_id is required for client users' });
+  }
+
+  try {
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Insert user
+    db.run(
+      `INSERT INTO users (username, email, password_hash, role, client_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, email, password_hash, role, client_id || null],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'Username or email already exists' });
+          }
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.status(201).json({
+          message: 'User created successfully',
+          userId: this.lastID
+        });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: 'Error creating user' });
+  }
+});
+
+// Login
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+
+  db.get(
+    'SELECT * FROM users WHERE username = ? AND is_active = 1',
+    [username],
+    async (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      try {
+        // Verify password
+        const validPassword = await bcrypt.compare(password, user.password_hash);
+
+        if (!validPassword) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Update last login
+        db.run(
+          'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+          [user.id]
+        );
+
+        // Generate JWT
+        const token = jwt.sign(
+          {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            client_id: user.client_id
+          },
+          JWT_SECRET,
+          { expiresIn: JWT_EXPIRES_IN }
+        );
+
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            client_id: user.client_id
+          }
+        });
+      } catch (error) {
+        res.status(500).json({ error: 'Error during authentication' });
+      }
+    }
+  );
+});
+
+// Get current user
+router.get('/me', verifyToken, (req, res) => {
+  db.get(
+    'SELECT id, username, email, role, client_id, created_at, last_login FROM users WHERE id = ?',
+    [req.user.id],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json(user);
+    }
+  );
+});
+
+// Change password
+router.post('/change-password', verifyToken, async (req, res) => {
+  const { current_password, new_password } = req.body;
+
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Current and new passwords are required' });
+  }
+
+  db.get(
+    'SELECT password_hash FROM users WHERE id = ?',
+    [req.user.id],
+    async (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      try {
+        // Verify current password
+        const validPassword = await bcrypt.compare(current_password, user.password_hash);
+
+        if (!validPassword) {
+          return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const new_password_hash = await bcrypt.hash(new_password, 10);
+
+        // Update password
+        db.run(
+          'UPDATE users SET password_hash = ? WHERE id = ?',
+          [new_password_hash, req.user.id],
+          (err) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error updating password' });
+            }
+
+            res.json({ message: 'Password updated successfully' });
+          }
+        );
+      } catch (error) {
+        res.status(500).json({ error: 'Error changing password' });
+      }
+    }
+  );
+});
+
+// Get all users (admin only)
+router.get('/users', verifyToken, requireAdmin, (req, res) => {
+  db.all(
+    'SELECT id, username, email, role, client_id, is_active, created_at, last_login FROM users ORDER BY created_at DESC',
+    (err, users) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      res.json(users);
+    }
+  );
+});
+
+// Initialize default admin user (only runs if no users exist)
+const initializeDefaultAdmin = async () => {
+  db.get('SELECT COUNT(*) as count FROM users', async (err, result) => {
+    if (err || result.count > 0) {
+      return; // Users already exist
+    }
+
+    const defaultUsername = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
+    const defaultEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@fralab.com';
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'changeme123';
+
+    try {
+      const password_hash = await bcrypt.hash(defaultPassword, 10);
+
+      db.run(
+        `INSERT INTO users (username, email, password_hash, role)
+         VALUES (?, ?, ?, 'admin')`,
+        [defaultUsername, defaultEmail, password_hash],
+        (err) => {
+          if (err) {
+            console.error('Error creating default admin:', err);
+          } else {
+            console.log('✓ Default admin user created');
+            console.log(`  Username: ${defaultUsername}`);
+            console.log(`  Password: ${defaultPassword}`);
+            console.log('  ⚠️  CHANGE THE PASSWORD IMMEDIATELY!');
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error initializing default admin:', error);
+    }
+  });
+};
+
+// Call initialization
+setTimeout(initializeDefaultAdmin, 1000);
+
+module.exports = router;
