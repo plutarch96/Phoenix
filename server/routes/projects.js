@@ -5,6 +5,7 @@ const db = require('../db/database');
 // Get all projects (optionally filtered by client)
 router.get('/', (req, res) => {
   const { client_id } = req.query;
+  console.log('[PROJECTS] Getting projects, client_id filter:', client_id);
 
   let query = `
     SELECT p.*, c.name as client_name, c.client_number,
@@ -24,8 +25,10 @@ router.get('/', (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
+      console.log('[PROJECTS] Database error:', err.message);
       return res.status(500).json({ error: err.message });
     }
+    console.log(`[PROJECTS] Returning ${rows.length} projects`);
     res.json(rows);
   });
 });
@@ -66,9 +69,11 @@ router.get('/:id', (req, res) => {
 
 // Create new project
 router.post('/', (req, res) => {
+  console.log('[PROJECTS] Creating new project:', req.body);
   const { client_id, project_number, project_name, description, status } = req.body;
 
   if (!client_id || !project_number || !project_name) {
+    console.log('[PROJECTS] Validation error: Missing required fields');
     return res.status(400).json({ error: 'client_id, project_number, and project_name are required' });
   }
 
@@ -78,12 +83,14 @@ router.post('/', (req, res) => {
     [client_id, project_number, project_name, description, status || 'active'],
     function(err) {
       if (err) {
+        console.log('[PROJECTS] Database error:', err.message);
         if (err.message.includes('UNIQUE')) {
           return res.status(400).json({ error: 'Project number already exists for this client' });
         }
         return res.status(500).json({ error: err.message });
       }
 
+      console.log('[PROJECTS] Project created successfully with ID:', this.lastID);
       res.status(201).json({
         id: this.lastID,
         message: 'Project created successfully',
