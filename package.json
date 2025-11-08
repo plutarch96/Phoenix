@@ -15,6 +15,7 @@
     "migrate-media-categories": "node server/db/migrate-media-categories.js",
     "migrate-add-serial": "node server/db/migrate-add-serial-number.js",
     "migrate-calibration-history": "node server/db/migrate-calibration-history.js",
+    "migrate-audit-log": "node server/db/migrate-audit-log.js",
     "check-db": "node server/db/check-structure.js"
   },
   "keywords": [

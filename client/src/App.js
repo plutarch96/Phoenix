@@ -7,7 +7,8 @@ import {
   Users,
   Flame,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Activity
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -19,6 +20,7 @@ import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
 import UsersPage from './pages/Users';
+import AuditLog from './pages/AuditLog';
 import GlobalSearch from './components/GlobalSearch';
 import ThemeToggle from './components/ThemeToggle';
 import './App.css';
@@ -57,6 +59,7 @@ function Navigation() {
   // Admin-only navigation items
   const adminNavItems = [
     { path: '/users', icon: UserIcon, label: 'User Management' },
+    { path: '/audit', icon: Activity, label: 'Audit Log' },
   ];
 
   // Combine navigation items based on role
@@ -152,6 +155,7 @@ function MainApp() {
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/audit" element={<AuditLog />} />
         </Routes>
       </main>
     </div>

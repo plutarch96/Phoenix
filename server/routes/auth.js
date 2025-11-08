@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -41,9 +42,22 @@ router.post('/register', verifyToken, requireAdmin, async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
+        const newUserId = this.lastID;
+
+        // Log user creation
+        logAction({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'CREATE',
+          entityType: 'user',
+          entityId: newUserId,
+          details: `Created user: ${username} with role: ${role}`,
+          ipAddress: req.ip
+        });
+
         res.status(201).json({
           message: 'User created successfully',
-          userId: this.lastID
+          userId: newUserId
         });
       }
     );
@@ -98,6 +112,15 @@ router.post('/login', async (req, res) => {
           JWT_SECRET,
           { expiresIn: JWT_EXPIRES_IN }
         );
+
+        // Log successful login
+        logAction({
+          userId: user.id,
+          username: user.username,
+          action: 'LOGIN',
+          details: `Successful login`,
+          ipAddress: req.ip
+        });
 
         res.json({
           token,
@@ -170,6 +193,17 @@ router.post('/change-password', verifyToken, async (req, res) => {
             if (err) {
               return res.status(500).json({ error: 'Error updating password' });
             }
+
+            // Log password change
+            logAction({
+              userId: req.user.id,
+              username: req.user.username,
+              action: 'UPDATE',
+              entityType: 'user',
+              entityId: req.user.id,
+              details: 'Changed password',
+              ipAddress: req.ip
+            });
 
             res.json({ message: 'Password updated successfully' });
           }

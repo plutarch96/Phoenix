@@ -20,6 +20,7 @@ const mediaRouter = require('./routes/media');
 const analyticsRouter = require('./routes/analytics');
 const equipmentTypesRouter = require('./routes/equipmentTypes');
 const searchRouter = require('./routes/search');
+const auditRouter = require('./routes/audit');
 
 const app = express();
 const server = http.createServer(app);
@@ -81,6 +82,7 @@ app.use('/api/media', mediaRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/equipment-types', equipmentTypesRouter);
+app.use('/api/audit', auditRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
