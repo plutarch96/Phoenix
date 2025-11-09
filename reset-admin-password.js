@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const db = require('./server/db/database');
 
 // Change this to your desired password
-const NEW_PASSWORD = 'admin123'; // <-- CHANGE THIS!
+const NEW_PASSWORD = 'password8';
 
 async function resetPassword() {
   try {
