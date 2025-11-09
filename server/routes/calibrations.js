@@ -7,6 +7,7 @@ const fs = require('fs');
 const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
 const { validateCalibration, validateId, validatePagination } = require('../middleware/validation');
+const { parsePaginationParams, createPaginatedResponse } = require('../utils/pagination');
 
 // Configure multer for PDF uploads
 const storage = multer.diskStorage({
@@ -35,11 +36,11 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Get all calibrations (active only by default) - REQUIRES AUTHENTICATION
+// Get all calibrations with pagination (active only by default) - REQUIRES AUTHENTICATION
 router.get('/', verifyToken, validatePagination, (req, res) => {
   const { status, equipment_id, include_history } = req.query;
+  const { page, limit, offset } = parsePaginationParams(req.query, 50);
 
-  let query = 'SELECT * FROM calibrations';
   const conditions = [];
   const params = [];
 
@@ -58,25 +59,36 @@ router.get('/', verifyToken, validatePagination, (req, res) => {
     params.push(equipment_id);
   }
 
-  if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
-  }
+  const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
 
-  query += ' ORDER BY expiration_date ASC, created_at DESC';
+  // Get total count
+  const countQuery = `SELECT COUNT(*) as total FROM calibrations${whereClause}`;
 
-  db.all(query, params, (err, rows) => {
+  db.get(countQuery, params, (err, countResult) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    // Update status based on expiration date
-    const today = new Date().toISOString().split('T')[0];
-    const updatedRows = rows.map(row => ({
-      ...row,
-      status: new Date(row.expiration_date) < new Date(today) ? 'expired' : 'valid'
-    }));
+    const total = countResult.total;
 
-    res.json(updatedRows);
+    // Get paginated results
+    const dataQuery = `SELECT * FROM calibrations${whereClause} ORDER BY expiration_date ASC, created_at DESC LIMIT ? OFFSET ?`;
+    const dataParams = [...params, limit, offset];
+
+    db.all(dataQuery, dataParams, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Update status based on expiration date
+      const today = new Date().toISOString().split('T')[0];
+      const updatedRows = rows.map(row => ({
+        ...row,
+        status: new Date(row.expiration_date) < new Date(today) ? 'expired' : 'valid'
+      }));
+
+      res.json(createPaginatedResponse(updatedRows, page, limit, total));
+    });
   });
 });
 

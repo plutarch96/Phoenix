@@ -3,18 +3,33 @@ const router = express.Router();
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
-const { validateClient, validateId } = require('../middleware/validation');
+const { validateClient, validateId, validatePagination } = require('../middleware/validation');
+const { parsePaginationParams, createPaginatedResponse } = require('../utils/pagination');
 
-// Get all clients - REQUIRES AUTHENTICATION
-router.get('/', verifyToken, (req, res) => {
+// Get all clients with pagination - REQUIRES AUTHENTICATION
+router.get('/', verifyToken, validatePagination, (req, res) => {
   console.log('[CLIENTS] Getting all clients');
-  db.all('SELECT * FROM clients ORDER BY name', (err, rows) => {
+
+  const { page, limit, offset } = parsePaginationParams(req.query, 100); // Default 100 for clients
+
+  // Get total count
+  db.get('SELECT COUNT(*) as total FROM clients', (err, countResult) => {
     if (err) {
       console.log('[CLIENTS] Database error:', err.message);
       return res.status(500).json({ error: err.message });
     }
-    console.log(`[CLIENTS] Returning ${rows.length} clients`);
-    res.json(rows);
+
+    const total = countResult.total;
+
+    // Get paginated results
+    db.all('SELECT * FROM clients ORDER BY name LIMIT ? OFFSET ?', [limit, offset], (err, rows) => {
+      if (err) {
+        console.log('[CLIENTS] Database error:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log(`[CLIENTS] Returning ${rows.length} of ${total} clients (page ${page})`);
+      res.json(createPaginatedResponse(rows, page, limit, total));
+    });
   });
 });
 

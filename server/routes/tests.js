@@ -8,18 +8,32 @@ const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware
 const { logAction } = require('../utils/auditLogger');
 const { validateTest, validateId, validatePagination } = require('../middleware/validation');
 
-// Get all tests with optional filtering - REQUIRES AUTHENTICATION
+// Get all tests with optional filtering and pagination - REQUIRES AUTHENTICATION
 router.get('/', verifyToken, validatePagination, (req, res) => {
-  const { client_id, status, tag } = req.query;
+  const { client_id, status, tag, page = 1, limit = 50 } = req.query;
 
-  let query = `
-    SELECT DISTINCT t.*, c.name as client_name
+  // Calculate offset
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const offset = (pageNum - 1) * limitNum;
+
+  let baseQuery = `
     FROM tests t
     LEFT JOIN clients c ON t.client_id = c.id
   `;
 
   const conditions = [];
   const params = [];
+
+  if (tag) {
+    baseQuery = `
+      FROM tests t
+      LEFT JOIN clients c ON t.client_id = c.id
+      LEFT JOIN test_tags tt ON t.id = tt.test_id
+    `;
+    conditions.push('tt.tag = ?');
+    params.push(tag);
+  }
 
   if (client_id) {
     conditions.push('t.client_id = ?');
@@ -31,42 +45,57 @@ router.get('/', verifyToken, validatePagination, (req, res) => {
     params.push(status);
   }
 
-  if (tag) {
-    query = `
-      SELECT DISTINCT t.*, c.name as client_name
-      FROM tests t
-      LEFT JOIN clients c ON t.client_id = c.id
-      LEFT JOIN test_tags tt ON t.id = tt.test_id
-    `;
-    conditions.push('tt.tag = ?');
-    params.push(tag);
-  }
+  const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
 
-  if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
-  }
+  // Get total count
+  const countQuery = `SELECT COUNT(DISTINCT t.id) as total ${baseQuery} ${whereClause}`;
 
-  query += ' ORDER BY t.created_at DESC';
-
-  db.all(query, params, (err, rows) => {
+  db.get(countQuery, params, (err, countResult) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
 
-    // Get tags for each test
-    const testIds = rows.map(r => r.id);
-    if (testIds.length === 0) {
-      return res.json([]);
-    }
+    const total = countResult.total;
+    const totalPages = Math.ceil(total / limitNum);
 
-    const placeholders = testIds.map(() => '?').join(',');
-    db.all(
-      `SELECT test_id, tag FROM test_tags WHERE test_id IN (${placeholders})`,
-      testIds,
-      (err, tags) => {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
+    // Get paginated results
+    const dataQuery = `
+      SELECT DISTINCT t.*, c.name as client_name
+      ${baseQuery}
+      ${whereClause}
+      ORDER BY t.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const dataParams = [...params, limitNum, offset];
+
+    db.all(dataQuery, dataParams, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Get tags for each test
+      const testIds = rows.map(r => r.id);
+      if (testIds.length === 0) {
+        return res.json({
+          data: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            totalPages
+          }
+        });
+      }
+
+      const placeholders = testIds.map(() => '?').join(',');
+      db.all(
+        `SELECT test_id, tag FROM test_tags WHERE test_id IN (${placeholders})`,
+        testIds,
+        (err, tags) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
 
         // Group tags by test_id
         const tagsByTest = {};
@@ -83,9 +112,18 @@ router.get('/', verifyToken, validatePagination, (req, res) => {
           tags: tagsByTest[test.id] || []
         }));
 
-        res.json(testsWithTags);
+        res.json({
+          data: testsWithTags,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            totalPages
+          }
+        });
       }
     );
+    });
   });
 });
 

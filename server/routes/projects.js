@@ -4,62 +4,86 @@ const db = require('../db/database');
 const { verifyToken, requireAdmin, requireProjectManager, requireFRAEmployee } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
 const { validateProject, validateId, validatePagination } = require('../middleware/validation');
+const { parsePaginationParams, createPaginatedResponse } = require('../utils/pagination');
 
-// Get all projects (optionally filtered by client) - REQUIRES AUTHENTICATION
+// Get all projects with pagination (optionally filtered by client) - REQUIRES AUTHENTICATION
 router.get('/', verifyToken, validatePagination, (req, res) => {
   const { client_id, include_tests } = req.query;
-  console.log('[PROJECTS] Getting projects, client_id filter:', client_id, 'include_tests:', include_tests);
+  const { page, limit, offset } = parsePaginationParams(req.query, 50);
 
-  let query = `
-    SELECT p.*, c.name as client_name, c.client_number,
-           COUNT(DISTINCT t.id) as test_count
+  console.log('[PROJECTS] Getting projects, client_id filter:', client_id, 'include_tests:', include_tests, 'page:', page);
+
+  let baseQuery = `
     FROM projects p
     LEFT JOIN clients c ON p.client_id = c.id
     LEFT JOIN tests t ON p.id = t.project_id
   `;
 
   const params = [];
+  const whereClause = client_id ? ' WHERE p.client_id = ?' : '';
   if (client_id) {
-    query += ' WHERE p.client_id = ?';
     params.push(client_id);
   }
 
-  query += ' GROUP BY p.id ORDER BY p.created_at DESC';
+  // Get total count
+  const countQuery = `SELECT COUNT(DISTINCT p.id) as total ${baseQuery} ${whereClause}`;
 
-  db.all(query, params, (err, projects) => {
+  db.get(countQuery, params, (err, countResult) => {
     if (err) {
       console.log('[PROJECTS] Database error:', err.message);
       return res.status(500).json({ error: err.message });
     }
 
-    // If include_tests is requested, fetch tests for each project
-    if (include_tests === 'true' && projects.length > 0) {
-      let completed = 0;
+    const total = countResult.total;
 
-      projects.forEach((project, index) => {
-        db.all(
-          'SELECT * FROM tests WHERE project_id = ? ORDER BY test_number',
-          [project.id],
-          (err, tests) => {
-            if (err) {
-              console.error('[PROJECTS] Error loading tests for project', project.id, err);
-              projects[index].tests = [];
-            } else {
-              projects[index].tests = tests;
-            }
+    // Get paginated results
+    const dataQuery = `
+      SELECT p.*, c.name as client_name, c.client_number,
+             COUNT(DISTINCT t.id) as test_count
+      ${baseQuery}
+      ${whereClause}
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
 
-            completed++;
-            if (completed === projects.length) {
-              console.log(`[PROJECTS] Returning ${projects.length} projects with tests`);
-              res.json(projects);
+    const dataParams = [...params, limit, offset];
+
+    db.all(dataQuery, dataParams, (err, projects) => {
+      if (err) {
+        console.log('[PROJECTS] Database error:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // If include_tests is requested, fetch tests for each project (TODO: Fix N+1 query)
+      if (include_tests === 'true' && projects.length > 0) {
+        let completed = 0;
+
+        projects.forEach((project, index) => {
+          db.all(
+            'SELECT * FROM tests WHERE project_id = ? ORDER BY test_number',
+            [project.id],
+            (err, tests) => {
+              if (err) {
+                console.error('[PROJECTS] Error loading tests for project', project.id, err);
+                projects[index].tests = [];
+              } else {
+                projects[index].tests = tests;
+              }
+
+              completed++;
+              if (completed === projects.length) {
+                console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects with tests (page ${page})`);
+                res.json(createPaginatedResponse(projects, page, limit, total));
+              }
             }
-          }
-        );
-      });
-    } else {
-      console.log(`[PROJECTS] Returning ${projects.length} projects`);
-      res.json(projects);
-    }
+          );
+        });
+      } else {
+        console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects (page ${page})`);
+        res.json(createPaginatedResponse(projects, page, limit, total));
+      }
+    });
   });
 });
 
