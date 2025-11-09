@@ -228,42 +228,42 @@ function Users() {
           <h3 className="card-title">User Roles</h3>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#fef2f2', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div className="role-box role-box-admin">
+            <div className="role-icon">
               <Shield size={20} color="#ef4444" />
-              <strong style={{ color: '#991b1b' }}>Admin</strong>
+              <strong className="role-title">Admin</strong>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#7f1d1d', margin: 0 }}>
+            <p className="role-desc">
               Full access to all features, can manage users, access audit logs, and control everything.
             </p>
           </div>
 
-          <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div className="role-box role-box-pm">
+            <div className="role-icon">
               <Shield size={20} color="#f59e0b" />
-              <strong style={{ color: '#92400e' }}>Project Manager</strong>
+              <strong className="role-title">Project Manager</strong>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#78350f', margin: 0 }}>
+            <p className="role-desc">
               Can edit, delete, and create projects, tests, and manage calibrations. Cannot access audit logs or manage users.
             </p>
           </div>
 
-          <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div className="role-box role-box-staff">
+            <div className="role-icon">
               <Briefcase size={20} color="#3b82f6" />
-              <strong style={{ color: '#1e40af' }}>Staff</strong>
+              <strong className="role-title">Staff</strong>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#1e3a8a', margin: 0 }}>
+            <p className="role-desc">
               Can add tests, upload test files and media, and manage calibration equipment. Cannot edit/delete projects.
             </p>
           </div>
 
-          <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div className="role-box role-box-client">
+            <div className="role-icon">
               <UserIcon size={20} color="#10b981" />
-              <strong style={{ color: '#065f46' }}>Client</strong>
+              <strong className="role-title">Client</strong>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#064e3b', margin: 0 }}>
+            <p className="role-desc">
               Limited access to view only their own tests, projects, and reports. No editing capabilities.
             </p>
           </div>

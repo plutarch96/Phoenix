@@ -1,0 +1,123 @@
+================================================================================
+DARK MODE COLOR CONTRAST ISSUES - QUICK REFERENCE
+================================================================================
+
+CRITICAL ISSUE: "Proposed Tag" - Blue on Black Unreadable
+Location: /home/user/Phoenix/client/src/App.css lines 464-473
+Problem: Light blue text (#60a5fa) on dark blue background (#1e3a8a)
+Contrast Ratio: 2.5:1 (WCAG FAIL - needs 4.5:1)
+Fix: Change text color to white (#ffffff)
+
+================================================================================
+ISSUE COUNT SUMMARY
+================================================================================
+
+1. MISSING CSS CLASS: .badge-secondary
+   - Used in 11 files but NOT DEFINED in CSS
+   - Used for "Proposed" status across multiple pages
+   - Currently falls back to generic .badge styling
+
+2. HARDCODED COLOR #3b82f6 (Blue) - 30+ instances
+   - Won't adapt to dark mode
+   - Used in tab colors, links, icons, headings
+   - Files: Breadcrumb, MyTests, Clients, Projects, ClientDetail, ProjectDetail
+
+3. HARDCODED COLOR #1e40af (Dark Blue) - Multiple instances
+   - Text color hardcoded in light mode colors
+   - Files: Users.js (Staff role), StreamViewer.js
+
+4. ROLE EXPLANATION BOXES - Light Only
+   - Lines 231-269 in Users.js
+   - Background and text colors hardcoded
+   - Unreadable in dark mode
+
+5. STREAMVIEWER STYLING - Hardcoded light colors
+   - Background: #f9fafb, #e5e7eb, #dbeafe (light gray/blue)
+   - Text: #1e40af, #1e3a8a (dark blue)
+
+================================================================================
+KEY FILES TO MODIFY
+================================================================================
+
+CRITICAL (Must Fix):
+  1. /home/user/Phoenix/client/src/App.css
+     - Add .badge-secondary class (missing)
+     - Fix .badge-info contrast (white text instead of blue)
+
+HIGH PRIORITY (Should Fix for Dark Mode Support):
+  2. /home/user/Phoenix/client/src/components/Breadcrumb.js
+     - Replace hardcoded #3b82f6 with var(--icon-blue)
+
+  3. /home/user/Phoenix/client/src/pages/MyTests.js
+     - Replace hardcoded #3b82f6 with var(--icon-blue)
+
+  4. /home/user/Phoenix/client/src/pages/Users.js
+     - Add dark mode support to role explanation boxes (lines 231-269)
+     - Replace hardcoded colors with CSS variables
+     - Fix table header colors (lines 157-166)
+
+  5. /home/user/Phoenix/client/src/pages/StreamViewer.js
+     - Replace hardcoded light colors with CSS variables
+
+  6. Other pages with hardcoded #3b82f6:
+     - ClientDetail.js (lines 169, 208, 237, 313, 315)
+     - Clients.js (lines 311, 352, 386, 442)
+     - ProjectDetail.js (lines 405, 464)
+     - Projects.js (lines 319, 321, 343)
+
+================================================================================
+WHAT TO DO
+================================================================================
+
+Step 1: Read the detailed reports:
+  - DARK_MODE_CONTRAST_ISSUES.md (full analysis with contrast ratios)
+  - ISSUES_BY_FILE.md (organized by file with exact line numbers)
+
+Step 2: Prioritize fixes:
+  FIRST:
+    - Add missing .badge-secondary class in App.css
+    - Fix .badge-info dark mode contrast (use white text)
+  THEN:
+    - Replace all hardcoded #3b82f6 with var(--icon-blue)
+    - Replace all hardcoded #1e40af with var(--icon-blue) or other vars
+    - Add dark mode support to role boxes and StreamViewer
+
+Step 3: Test:
+  - Switch to dark mode for each page
+  - Check all badges, links, text are readable
+  - Use browser inspector to verify contrast ratios
+
+================================================================================
+WCAG STANDARDS REMINDER
+================================================================================
+
+WCAG AA Requirements:
+- Normal text: 4.5:1 contrast ratio minimum
+- Large text (18+ bold or 24+): 3:1 minimum
+- Graphics/UI components: 3:1 minimum
+
+Current Failures:
+- badge-info dark mode: 2.5:1 (FAIL)
+- badge-success dark mode: 4.2:1 (FAIL - needs 4.5:1)
+- badge-warning dark mode: 3.8:1 (FAIL - needs 4.5:1)
+- Staff role box dark mode: ~1.5:1 (CRITICAL FAIL)
+
+================================================================================
+CSS VARIABLES AVAILABLE (in App.css)
+================================================================================
+
+Colors to use instead of hardcoding:
+  --bg-primary: #f5f7fa / #0a0f1e
+  --bg-secondary: #ffffff / #111827
+  --bg-tertiary: #f9fafb / #1f2937
+  --text-primary: #1e293b / #f1f5f9
+  --text-secondary: #64748b / #94a3b8
+  --text-tertiary: #374151 / #cbd5e1
+  --border-color: #e5e7eb / #374151
+  --icon-blue: #3b82f6 / #60a5fa
+  --icon-green: #10b981 / #34d399
+  --icon-yellow: #f59e0b / #fbbf24
+
+================================================================================
+END OF QUICK REFERENCE
+================================================================================
