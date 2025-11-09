@@ -32,6 +32,7 @@
   --badge-bg-success: #d1fae5;
   --badge-bg-warning: #fef3c7;
   --badge-bg-danger: #fee2e2;
+  --badge-bg-secondary: #f1f5f9;
 }
 
 .dark-mode {
@@ -67,6 +68,7 @@
   --badge-bg-success: #064e3b;
   --badge-bg-warning: #78350f;
   --badge-bg-danger: #7f1d1d;
+  --badge-bg-secondary: #374151;
 }
 
 * {
@@ -468,8 +470,142 @@ body {
 }
 
 .dark-mode .badge-info {
-  color: #60a5fa;
+  color: #ffffff;
   border-color: #60a5fa;
+}
+
+.badge-secondary {
+  background: var(--badge-bg-secondary);
+  color: #64748b;
+  border-color: #64748b;
+}
+
+.dark-mode .badge-secondary {
+  color: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+/* Role Info Boxes */
+.role-box {
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.role-box-admin {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.role-box-admin .role-title {
+  color: #991b1b;
+}
+
+.role-box-admin .role-desc {
+  color: #7f1d1d;
+}
+
+.dark-mode .role-box-admin {
+  background: #7f1d1d;
+  border-left-color: #ef4444;
+}
+
+.dark-mode .role-box-admin .role-title {
+  color: #fecaca;
+}
+
+.dark-mode .role-box-admin .role-desc {
+  color: #fca5a5;
+}
+
+.role-box-pm {
+  background: #fef3c7;
+  border-left-color: #f59e0b;
+}
+
+.role-box-pm .role-title {
+  color: #92400e;
+}
+
+.role-box-pm .role-desc {
+  color: #78350f;
+}
+
+.dark-mode .role-box-pm {
+  background: #78350f;
+  border-left-color: #fbbf24;
+}
+
+.dark-mode .role-box-pm .role-title {
+  color: #fde68a;
+}
+
+.dark-mode .role-box-pm .role-desc {
+  color: #fcd34d;
+}
+
+.role-box-staff {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.role-box-staff .role-title {
+  color: #1e40af;
+}
+
+.role-box-staff .role-desc {
+  color: #1e3a8a;
+}
+
+.dark-mode .role-box-staff {
+  background: #1e3a8a;
+  border-left-color: #60a5fa;
+}
+
+.dark-mode .role-box-staff .role-title {
+  color: #dbeafe;
+}
+
+.dark-mode .role-box-staff .role-desc {
+  color: #bfdbfe;
+}
+
+.role-box-client {
+  background: #f0fdf4;
+  border-left-color: #10b981;
+}
+
+.role-box-client .role-title {
+  color: #065f46;
+}
+
+.role-box-client .role-desc {
+  color: #064e3b;
+}
+
+.dark-mode .role-box-client {
+  background: #064e3b;
+  border-left-color: #34d399;
+}
+
+.dark-mode .role-box-client .role-title {
+  color: #d1fae5;
+}
+
+.dark-mode .role-box-client .role-desc {
+  color: #a7f3d0;
+}
+
+.role-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.role-desc {
+  font-size: 0.875rem;
+  margin: 0;
 }
 
 /* Tags */
