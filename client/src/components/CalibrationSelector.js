@@ -29,8 +29,10 @@ function CalibrationSelector({ testId, onClose, onSuccess }) {
   const loadCalibrations = async () => {
     try {
       const res = await calibrationsAPI.getAll();
+      // Handle new paginated response format
+      const calibrationsData = res.data.data || res.data;
       // Only show valid calibrations
-      const validCals = res.data.filter(cal => cal.status === 'valid');
+      const validCals = calibrationsData.filter(cal => cal.status === 'valid');
       setCalibrations(validCals);
       setFilteredCalibrations(validCals);
     } catch (error) {

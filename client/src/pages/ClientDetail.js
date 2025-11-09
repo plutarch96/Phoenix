@@ -48,7 +48,8 @@ function ClientDetail() {
       ]);
 
       setClient(clientRes.data);
-      setProjects(projectsRes.data);
+      // Handle new paginated response format
+      setProjects(projectsRes.data.data || projectsRes.data);
       // Filter activity for this client
       setRecentActivity(activityRes.data.filter(a => a.client_id == id));
     } catch (error) {

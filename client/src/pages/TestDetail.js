@@ -69,7 +69,8 @@ function TestDetail() {
   const loadClients = async () => {
     try {
       const res = await clientsAPI.getAll();
-      setClients(res.data);
+      // Handle new paginated response format
+      setClients(res.data.data || res.data);
     } catch (error) {
       console.error('Error loading clients:', error);
     }

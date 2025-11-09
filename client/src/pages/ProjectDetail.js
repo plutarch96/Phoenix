@@ -70,7 +70,8 @@ function ProjectDetail() {
 
       // Load all clients for bulk test modal
       const clientsRes = await clientsAPI.getAll();
-      setClients(clientsRes.data);
+      // Handle new paginated response format
+      setClients(clientsRes.data.data || clientsRes.data);
     } catch (error) {
       console.error('Error loading project:', error);
       toast.error('Failed to load project');
