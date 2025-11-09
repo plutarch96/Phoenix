@@ -320,71 +320,23 @@ function ProjectDetail() {
               <span style={{ color: '#64748b' }}>
                 {project.tests?.length || 0} test(s)
               </span>
-              {members.claimed_by && (
-                <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <Briefcase size={14} />
-                  PM: {members.claimed_by.username}
-                </span>
-              )}
-              {members.members.length > 0 && (
-                <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <UserPlus size={14} />
-                  Staff: {members.members.length}
-                </span>
-              )}
+            </div>
+            <div style={{ marginBottom: '0.5rem' }}>
+              <strong>PM:</strong> {members.claimed_by ? members.claimed_by.username : 'None'}
             </div>
             {project.description && (
-              <p style={{ color: '#64748b', marginTop: '1rem' }}>{project.description}</p>
+              <p style={{ color: '#64748b', marginTop: '1rem', marginBottom: '1rem' }}>{project.description}</p>
+            )}
+            {members.members.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <strong>Staff:</strong>
+                <span style={{ color: '#64748b' }}>
+                  {members.members.map(m => m.username).join(', ')}
+                </span>
+              </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* PROJECT ASSIGNMENT */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">
-            <Users size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Project Assignment
-          </h3>
-        </div>
-
-        {/* Show who claimed it */}
-        {members.claimed_by && (
-          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-              Claimed by (Project Manager)
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User size={16} />
-              <span style={{ fontWeight: 500 }}>{members.claimed_by.username}</span>
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                ({members.claimed_by.email})
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Show who joined (staff members) */}
-        {members.members.length > 0 && (
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-              Staff Members ({members.members.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {members.members.map(member => (
-                <div key={member.id} style={{ padding: '0.5rem', background: 'var(--bg-tertiary)', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <UserPlus size={14} />
-                  <span style={{ fontWeight: 500 }}>{member.username}</span>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    ({member.email})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
       </div>
 
       {/* CLIENT CONTACT INFORMATION */}
