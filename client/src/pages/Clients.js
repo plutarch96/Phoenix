@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search, ExternalLink, Download, Printer } from 'lucide-react';
+import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clientsAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { exportClients, printPage, formatDate } from '../utils/exportUtils';
+import { exportClients, formatDate } from '../utils/exportUtils';
 
 function Clients() {
   const { user, isClient, isFRAEmployee, isAdmin, canManageProjects } = useAuth();
@@ -230,10 +230,6 @@ function Clients() {
           <button className="btn btn-secondary" onClick={() => exportClients(filteredClients)} title="Export to CSV">
             <Download size={20} />
             Export
-          </button>
-          <button className="btn btn-secondary" onClick={printPage} title="Print">
-            <Printer size={20} />
-            Print
           </button>
           {!isClient() && (
             <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Printer, Briefcase, UserPlus } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Briefcase, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { exportProjects, printPage } from '../utils/exportUtils';
+import { exportProjects } from '../utils/exportUtils';
 
 function Projects() {
   const { user, isClient, isFRAEmployee, canManageProjects, isProjectManager, isAdmin, isStaff } = useAuth();
@@ -205,10 +205,6 @@ function Projects() {
           <button className="btn btn-secondary" onClick={() => exportProjects(allProjects)} title="Export to CSV">
             <Download size={20} />
             Export
-          </button>
-          <button className="btn btn-secondary" onClick={printPage} title="Print">
-            <Printer size={20} />
-            Print
           </button>
           {isFRAEmployee() && (
             <button className="btn btn-primary" onClick={() => openNewProjectModal()}>
