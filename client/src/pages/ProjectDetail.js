@@ -14,7 +14,9 @@ import {
   Building,
   Plus,
   List,
-  Star
+  Star,
+  UserPlus,
+  Users
 } from 'lucide-react';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -27,7 +29,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isFRAEmployee, canManageProjects } = useAuth();
+  const { user, isFRAEmployee, canManageProjects, isProjectManager, isStaff } = useAuth();
   const toast = useToast();
   const [project, setProject] = useState(null);
   const [client, setClient] = useState(null);
@@ -37,10 +39,14 @@ function ProjectDetail() {
   const [clients, setClients] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [isTagged, setIsTagged] = useState(false);
+  const [members, setMembers] = useState({ claimed_by: null, members: [] });
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
 
   useEffect(() => {
     loadProject();
     checkIfTagged();
+    loadMembers();
   }, [id]);
 
   const loadProject = async () => {
@@ -121,6 +127,61 @@ function ProjectDetail() {
     }
   };
 
+  const loadMembers = async () => {
+    try {
+      const res = await projectsAPI.getMembers(id);
+      setMembers(res.data);
+      setIsClaimed(res.data.claimed_by?.id === user.id);
+      setIsJoined(res.data.members.some(m => m.id === user.id));
+    } catch (error) {
+      console.error('Error loading members:', error);
+    }
+  };
+
+  const handleClaim = async () => {
+    try {
+      await projectsAPI.claimProject(id, user.id);
+      toast.success('Project claimed successfully');
+      loadMembers();
+    } catch (error) {
+      console.error('Error claiming project:', error);
+      toast.error(error.response?.data?.error || 'Failed to claim project');
+    }
+  };
+
+  const handleUnclaim = async () => {
+    try {
+      await projectsAPI.unclaimProject(id, user.id);
+      toast.success('Project unclaimed');
+      loadMembers();
+    } catch (error) {
+      console.error('Error unclaiming project:', error);
+      toast.error('Failed to unclaim project');
+    }
+  };
+
+  const handleJoin = async () => {
+    try {
+      await projectsAPI.joinProject(id, user.id);
+      toast.success('Joined project successfully');
+      loadMembers();
+    } catch (error) {
+      console.error('Error joining project:', error);
+      toast.error(error.response?.data?.error || 'Failed to join project');
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      await projectsAPI.leaveProject(id, user.id);
+      toast.success('Left project');
+      loadMembers();
+    } catch (error) {
+      console.error('Error leaving project:', error);
+      toast.error('Failed to leave project');
+    }
+  };
+
   const getTestId = (test) => {
     const clientNum = project.client_number || '###';
     const projectNum = project.project_number || '###';
@@ -175,6 +236,91 @@ function ProjectDetail() {
               <p style={{ color: '#64748b', marginTop: '1rem' }}>{project.description}</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* PROJECT ASSIGNMENT */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            <Users size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Project Assignment
+          </h3>
+        </div>
+
+        {/* Show who claimed it */}
+        {members.claimed_by && (
+          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+              Claimed by (Project Manager)
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <User size={16} />
+              <span style={{ fontWeight: 500 }}>{members.claimed_by.username}</span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                ({members.claimed_by.email})
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Show who joined (staff members) */}
+        {members.members.length > 0 && (
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+              Staff Members ({members.members.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {members.members.map(member => (
+                <div key={member.id} style={{ padding: '0.5rem', background: 'var(--bg-tertiary)', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <UserPlus size={14} />
+                  <span style={{ fontWeight: 500 }}>{member.username}</span>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    ({member.email})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Claim/Join buttons */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {isProjectManager() && (
+            <>
+              {!members.claimed_by ? (
+                <button className="btn btn-primary" onClick={handleClaim}>
+                  <User size={20} />
+                  Claim Project
+                </button>
+              ) : isClaimed ? (
+                <button className="btn btn-secondary" onClick={handleUnclaim}>
+                  <User size={20} />
+                  Unclaim Project
+                </button>
+              ) : (
+                <div style={{ padding: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  Already claimed by {members.claimed_by.username}
+                </div>
+              )}
+            </>
+          )}
+
+          {isStaff() && (
+            <>
+              {!isJoined ? (
+                <button className="btn btn-primary" onClick={handleJoin}>
+                  <UserPlus size={20} />
+                  Join Project
+                </button>
+              ) : (
+                <button className="btn btn-secondary" onClick={handleLeave}>
+                  <UserPlus size={20} />
+                  Leave Project
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 

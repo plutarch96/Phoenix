@@ -93,6 +93,23 @@ export const projectsAPI = {
     api.delete(`/projects/${projectId}/tag`, { data: { user_id: userId } }),
   getTaggedByUser: (userId) =>
     api.get(`/projects/user/${userId}/tagged`),
+  // Project claiming (Project Manager)
+  claimProject: (projectId, userId) =>
+    api.post(`/projects/${projectId}/claim`, { user_id: userId }),
+  unclaimProject: (projectId, userId) =>
+    api.delete(`/projects/${projectId}/claim`, { data: { user_id: userId } }),
+  getClaimedByUser: (userId) =>
+    api.get(`/projects/user/${userId}/claimed`),
+  // Project joining (Staff)
+  joinProject: (projectId, userId) =>
+    api.post(`/projects/${projectId}/join`, { user_id: userId }),
+  leaveProject: (projectId, userId) =>
+    api.delete(`/projects/${projectId}/join`, { data: { user_id: userId } }),
+  getJoinedByUser: (userId) =>
+    api.get(`/projects/user/${userId}/joined`),
+  // Get project members
+  getMembers: (projectId) =>
+    api.get(`/projects/${projectId}/members`),
 };
 
 // Media API
