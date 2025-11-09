@@ -26,7 +26,8 @@ function Calibrations() {
   const loadCalibrations = async () => {
     try {
       const res = await calibrationsAPI.getAll();
-      setCalibrations(res.data);
+      // Handle new paginated response format
+      setCalibrations(res.data.data || res.data);
     } catch (error) {
       console.error('Error loading calibrations:', error);
     } finally {

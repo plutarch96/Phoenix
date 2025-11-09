@@ -36,9 +36,10 @@ function Tests() {
         clientsAPI.getAll(),
         analyticsAPI.getAllTags()
       ]);
-      setTests(testsRes.data);
-      setClients(clientsRes.data);
-      setTags(tagsRes.data);
+      // Handle new paginated response format
+      setTests(testsRes.data.data || testsRes.data);
+      setClients(clientsRes.data.data || clientsRes.data);
+      setTags(tagsRes.data.data || tagsRes.data);
     } catch (error) {
       console.error('Error loading tests:', error);
     } finally {

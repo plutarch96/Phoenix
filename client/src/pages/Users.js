@@ -29,7 +29,8 @@ function Users() {
   const loadUsers = async () => {
     try {
       const res = await authAPI.getUsers();
-      setUsers(res.data);
+      // Handle new paginated response format
+      setUsers(res.data.data || res.data);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users');
@@ -41,7 +42,8 @@ function Users() {
   const loadClients = async () => {
     try {
       const res = await clientsAPI.getAll();
-      setClients(res.data);
+      // Handle new paginated response format
+      setClients(res.data.data || res.data);
     } catch (error) {
       console.error('Error loading clients:', error);
     }

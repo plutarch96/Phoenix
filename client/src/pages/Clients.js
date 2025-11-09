@@ -31,9 +31,12 @@ function Clients() {
     try {
       const res = await clientsAPI.getAll();
 
+      // Handle new paginated response format
+      const clientsData = res.data.data || res.data;
+
       // If user is a client, filter to show only their client
       if (isClient() && user.client_id) {
-        const clientData = res.data.filter(c => c.id === user.client_id);
+        const clientData = clientsData.filter(c => c.id === user.client_id);
         setClients(clientData);
         // Auto-expand for client users
         if (clientData.length > 0) {
@@ -41,7 +44,7 @@ function Clients() {
           loadProjectsForClient(clientData[0].id);
         }
       } else {
-        setClients(res.data);
+        setClients(clientsData);
       }
     } catch (error) {
       console.error('Error loading clients:', error);

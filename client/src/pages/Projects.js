@@ -35,11 +35,15 @@ function Projects() {
           : projectsAPI.getAll({ include_tests: true })
       ]);
 
-      setClients(clientsRes.data);
+      // Handle new paginated response format
+      const clientsData = clientsRes.data.data || clientsRes.data;
+      const projectsData = projectsRes.data.data || projectsRes.data;
+
+      setClients(clientsData);
 
       // Group projects by client
       const grouped = {};
-      projectsRes.data.forEach(project => {
+      projectsData.forEach(project => {
         if (!grouped[project.client_id]) {
           grouped[project.client_id] = [];
         }
@@ -48,7 +52,7 @@ function Projects() {
       setProjectsByClient(grouped);
 
       // Load members for all projects
-      const membersPromises = projectsRes.data.map(project =>
+      const membersPromises = projectsData.map(project =>
         projectsAPI.getMembers(project.id).then(res => ({ projectId: project.id, data: res.data }))
       );
       const membersResults = await Promise.all(membersPromises);
@@ -59,8 +63,8 @@ function Projects() {
       setProjectMembers(membersMap);
 
       // Auto-expand first client for client users
-      if (isClient() && clientsRes.data.length > 0) {
-        setExpandedClients({ [clientsRes.data[0].id]: true });
+      if (isClient() && clientsData.length > 0) {
+        setExpandedClients({ [clientsData[0].id]: true });
       }
     } catch (error) {
       console.error('Error loading data:', error);
