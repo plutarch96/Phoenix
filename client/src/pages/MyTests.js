@@ -13,7 +13,13 @@ function MyTests() {
   const [claimedProjects, setClaimedProjects] = useState([]);
   const [joinedProjects, setJoinedProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('tests');
+  // Default to 'claimed' for PMs, 'joined' for staff, otherwise 'tests'
+  const getDefaultTab = () => {
+    if (isProjectManager()) return 'claimed';
+    if (isStaff()) return 'joined';
+    return 'tests';
+  };
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
 
   useEffect(() => {
     if (user) {
@@ -153,46 +159,6 @@ function MyTests() {
           display: 'flex',
           borderBottom: '2px solid var(--border-color)'
         }}>
-          <button
-            onClick={() => setActiveTab('tests')}
-            style={{
-              padding: '1rem 1.5rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === 'tests' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'tests' ? '#3b82f6' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'tests' ? 600 : 400,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s',
-              marginBottom: '-2px'
-            }}
-          >
-            <Eye size={18} />
-            My Tests ({myTests.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('projects')}
-            style={{
-              padding: '1rem 1.5rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === 'projects' ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === 'projects' ? '#3b82f6' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'projects' ? 600 : 400,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s',
-              marginBottom: '-2px'
-            }}
-          >
-            <FolderOpen size={18} />
-            My Projects ({myProjects.length})
-          </button>
           {isProjectManager() && (
             <button
               onClick={() => setActiveTab('claimed')}
@@ -237,6 +203,46 @@ function MyTests() {
               Joined Projects ({joinedProjects.length})
             </button>
           )}
+          <button
+            onClick={() => setActiveTab('tests')}
+            style={{
+              padding: '1rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'tests' ? '2px solid #3b82f6' : '2px solid transparent',
+              color: activeTab === 'tests' ? '#3b82f6' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'tests' ? 600 : 400,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s',
+              marginBottom: '-2px'
+            }}
+          >
+            <Eye size={18} />
+            My Tests ({myTests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('projects')}
+            style={{
+              padding: '1rem 1.5rem',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'projects' ? '2px solid #3b82f6' : '2px solid transparent',
+              color: activeTab === 'projects' ? '#3b82f6' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'projects' ? 600 : 400,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s',
+              marginBottom: '-2px'
+            }}
+          >
+            <FolderOpen size={18} />
+            My Projects ({myProjects.length})
+          </button>
         </div>
 
         <div style={{ padding: '1.5rem' }}>
