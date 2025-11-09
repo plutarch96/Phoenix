@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const path = require('path');
+const fs = require('fs');
+const archiver = require('archiver');
 const { verifyToken } = require('../middleware/auth');
 const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
@@ -116,11 +119,11 @@ router.get('/:id', (req, res) => {
             return res.status(500).json({ error: err.message });
           }
 
-          // Get calibrations
+          // Get calibrations (only active ones)
           db.all(
             `SELECT c.* FROM calibrations c
              JOIN test_calibrations tc ON c.id = tc.calibration_id
-             WHERE tc.test_id = ?`,
+             WHERE tc.test_id = ? AND c.is_active = 1`,
             [id],
             (err, calibrations) => {
               if (err) {
@@ -289,7 +292,7 @@ router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Add calibration to test
-router.post('/:id/calibrations', (req, res) => {
+router.post('/:id/calibrations', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
   const { calibration_id } = req.body;
 
@@ -309,7 +312,7 @@ router.post('/:id/calibrations', (req, res) => {
 });
 
 // Remove calibration from test
-router.delete('/:id/calibrations/:calibration_id', (req, res) => {
+router.delete('/:id/calibrations/:calibration_id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id, calibration_id } = req.params;
 
   db.run(
@@ -320,6 +323,72 @@ router.delete('/:id/calibrations/:calibration_id', (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       res.json({ message: 'Calibration removed from test' });
+    }
+  );
+});
+
+// Download all calibration sheets for a test as ZIP
+router.get('/:id/download-calibration-sheets', verifyToken, (req, res) => {
+  const { id } = req.params;
+
+  console.log('[TESTS] Zip download request for test calibration sheets', id);
+
+  db.all(
+    `SELECT c.* FROM calibrations c
+     JOIN test_calibrations tc ON c.id = tc.calibration_id
+     WHERE tc.test_id = ? AND c.is_active = 1 AND c.pdf_path IS NOT NULL`,
+    [id],
+    (err, calibrations) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (!calibrations || calibrations.length === 0) {
+        return res.status(404).json({ error: 'No calibration sheets found for this test' });
+      }
+
+      // Create zip archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
+      });
+
+      // Set response headers
+      res.attachment(`test-${id}-calibration-sheets.zip`);
+      res.setHeader('Content-Type', 'application/zip');
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add files to archive
+      let filesAdded = 0;
+      calibrations.forEach(cal => {
+        const filePath = path.join(__dirname, '..', cal.pdf_path);
+        if (fs.existsSync(filePath)) {
+          // Create a readable filename: Equipment_ID-EquipmentName.pdf
+          const fileName = `${cal.equipment_id}-${cal.equipment_name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+          archive.file(filePath, { name: fileName });
+          filesAdded++;
+        } else {
+          console.error('[TESTS] Calibration PDF not found:', filePath);
+        }
+      });
+
+      console.log('[TESTS] Adding', filesAdded, 'calibration sheets to zip');
+
+      if (filesAdded === 0) {
+        archive.abort();
+        return res.status(404).json({ error: 'No calibration PDF files found on disk' });
+      }
+
+      // Finalize archive
+      archive.finalize();
+
+      archive.on('error', (err) => {
+        console.error('[TESTS] Archive error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Error creating archive' });
+        }
+      });
     }
   );
 });

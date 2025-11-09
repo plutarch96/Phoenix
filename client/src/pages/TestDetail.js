@@ -146,6 +146,23 @@ function TestDetail() {
     window.open(`/api/media/test/${id}/download-category/${category}`, '_blank');
   };
 
+  const handleDownloadCalibrationSheets = async () => {
+    try {
+      const response = await testsAPI.downloadCalibrationSheets(id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `test-${id}-calibration-sheets.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading calibration sheets:', error);
+      alert(error.response?.data?.error || 'Failed to download calibration sheets. Make sure calibration PDFs exist.');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'badge-warning',
@@ -675,7 +692,17 @@ function TestDetail() {
                 onClick={() => handleDownloadCategory('calibration')}
               >
                 <FolderArchive size={16} />
-                Download All as ZIP
+                Download Uploaded Docs
+              </button>
+            )}
+            {test.calibrations && test.calibrations.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleDownloadCalibrationSheets}
+                title="Download calibration sheets from linked equipment"
+              >
+                <FolderArchive size={16} />
+                Download Equipment Sheets
               </button>
             )}
             <button
