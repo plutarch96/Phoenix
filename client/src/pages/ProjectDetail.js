@@ -11,12 +11,16 @@ import {
   User,
   Mail,
   Phone,
-  Building
+  Building,
+  Plus,
+  List
 } from 'lucide-react';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
+import BulkTestModal from '../components/BulkTestModal';
+import Breadcrumb from '../components/Breadcrumb';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function ProjectDetail() {
@@ -28,6 +32,8 @@ function ProjectDetail() {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showBulkTestModal, setShowBulkTestModal] = useState(false);
+  const [clients, setClients] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
@@ -44,6 +50,10 @@ function ProjectDetail() {
         const clientRes = await clientsAPI.getById(res.data.client_id);
         setClient(clientRes.data);
       }
+
+      // Load all clients for bulk test modal
+      const clientsRes = await clientsAPI.getAll();
+      setClients(clientsRes.data);
     } catch (error) {
       console.error('Error loading project:', error);
       toast.error('Failed to load project');
@@ -55,6 +65,12 @@ function ProjectDetail() {
   const handleProjectUpdated = () => {
     setShowProjectModal(false);
     loadProject();
+  };
+
+  const handleBulkTestsCreated = () => {
+    setShowBulkTestModal(false);
+    loadProject();
+    toast.success('Tests created successfully');
   };
 
   const handleDelete = () => {
@@ -99,12 +115,13 @@ function ProjectDetail() {
 
   return (
     <div className="page">
-      <div style={{ marginBottom: '2rem' }}>
-        <Link to="/clients" className="btn btn-secondary" style={{ marginBottom: '1rem' }}>
-          <ArrowLeft size={20} />
-          Back to Clients
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: 'Clients', path: '/clients' },
+          { label: client?.name || 'Client', path: `/clients?highlight=${project?.client_id}` },
+          { label: project?.project_name || 'Project' }
+        ]}
+      />
 
       {/* PROJECT SUMMARY */}
       <div className="card">
@@ -181,6 +198,14 @@ function ProjectDetail() {
             <FileText size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
             Tests ({project.tests?.length || 0})
           </h3>
+          {isFRAEmployee() && (
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowBulkTestModal(true)}>
+                <List size={16} />
+                Add Multiple Tests
+              </button>
+            </div>
+          )}
         </div>
         {project.tests && project.tests.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -293,6 +318,15 @@ function ProjectDetail() {
           client={client}
           onClose={() => setShowProjectModal(false)}
           onSuccess={handleProjectUpdated}
+        />
+      )}
+
+      {showBulkTestModal && (
+        <BulkTestModal
+          clients={clients}
+          project={project}
+          onClose={() => setShowBulkTestModal(false)}
+          onSuccess={handleBulkTestsCreated}
         />
       )}
 

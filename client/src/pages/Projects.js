@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, ChevronDown, ChevronRight, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { exportProjects, printPage } from '../utils/exportUtils';
 
 function Projects() {
   const { user, isClient, isFRAEmployee } = useAuth();
@@ -131,12 +132,22 @@ function Projects() {
         <div>
           <h2>Projects</h2>
         </div>
-        {isFRAEmployee() && (
-          <button className="btn btn-primary" onClick={openNewProjectModal}>
-            <Plus size={20} />
-            Add Project
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn btn-secondary" onClick={() => exportProjects(filteredProjects)} title="Export to CSV">
+            <Download size={20} />
+            Export
           </button>
-        )}
+          <button className="btn btn-secondary" onClick={printPage} title="Print">
+            <Printer size={20} />
+            Print
+          </button>
+          {isFRAEmployee() && (
+            <button className="btn btn-primary" onClick={openNewProjectModal}>
+              <Plus size={20} />
+              Add Project
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search Bar */}

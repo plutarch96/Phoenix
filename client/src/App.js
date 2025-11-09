@@ -23,6 +23,7 @@ import MyTests from './pages/MyTests';
 import TestDetail from './pages/TestDetail';
 import Calibrations from './pages/Calibrations';
 import Clients from './pages/Clients';
+import ClientDetail from './pages/ClientDetail';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import UsersPage from './pages/Users';
@@ -183,6 +184,7 @@ function MainApp() {
           <Route path="/tests/:id" element={<TestDetail />} />
           <Route path="/calibrations" element={<Calibrations />} />
           <Route path="/clients" element={<Clients />} />
+          <Route path="/clients/:id" element={<ClientDetail />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/users" element={<UsersPage />} />
