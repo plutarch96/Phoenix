@@ -55,30 +55,40 @@ router.get('/', verifyToken, validatePagination, (req, res) => {
         return res.status(500).json({ error: err.message });
       }
 
-      // If include_tests is requested, fetch tests for each project (TODO: Fix N+1 query)
+      // If include_tests is requested, fetch all tests in one query (fixed N+1 problem)
       if (include_tests === 'true' && projects.length > 0) {
-        let completed = 0;
+        const projectIds = projects.map(p => p.id);
+        const placeholders = projectIds.map(() => '?').join(',');
 
-        projects.forEach((project, index) => {
-          db.all(
-            'SELECT * FROM tests WHERE project_id = ? ORDER BY test_number',
-            [project.id],
-            (err, tests) => {
-              if (err) {
-                console.error('[PROJECTS] Error loading tests for project', project.id, err);
-                projects[index].tests = [];
-              } else {
-                projects[index].tests = tests;
-              }
-
-              completed++;
-              if (completed === projects.length) {
-                console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects with tests (page ${page})`);
-                res.json(createPaginatedResponse(projects, page, limit, total));
-              }
+        db.all(
+          `SELECT * FROM tests WHERE project_id IN (${placeholders}) ORDER BY project_id, test_number`,
+          projectIds,
+          (err, allTests) => {
+            if (err) {
+              console.error('[PROJECTS] Error loading tests:', err);
+              // Return projects without tests on error
+              console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects (error loading tests)`);
+              return res.json(createPaginatedResponse(projects, page, limit, total));
             }
-          );
-        });
+
+            // Group tests by project_id
+            const testsByProject = {};
+            allTests.forEach(test => {
+              if (!testsByProject[test.project_id]) {
+                testsByProject[test.project_id] = [];
+              }
+              testsByProject[test.project_id].push(test);
+            });
+
+            // Attach tests to projects
+            projects.forEach(project => {
+              project.tests = testsByProject[project.id] || [];
+            });
+
+            console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects with tests (page ${page})`);
+            res.json(createPaginatedResponse(projects, page, limit, total));
+          }
+        );
       } else {
         console.log(`[PROJECTS] Returning ${projects.length} of ${total} projects (page ${page})`);
         res.json(createPaginatedResponse(projects, page, limit, total));
