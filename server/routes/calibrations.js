@@ -4,6 +4,8 @@ const db = require('../db/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { verifyToken } = require('../middleware/auth');
+const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
 // Configure multer for PDF uploads
 const storage = multer.diskStorage({
@@ -124,7 +126,7 @@ router.get('/history/:equipment_id', (req, res) => {
 });
 
 // Create new calibration with PDF upload (with history logging)
-router.post('/', upload.single('pdf'), (req, res) => {
+router.post('/', verifyToken, requireStaffOrAbove, upload.single('pdf'), (req, res) => {
   const {
     equipment_name,
     equipment_type,
@@ -191,7 +193,7 @@ router.post('/', upload.single('pdf'), (req, res) => {
 });
 
 // Update calibration (creates new record with history logging)
-router.put('/:id', upload.single('pdf'), (req, res) => {
+router.put('/:id', verifyToken, requireStaffOrAbove, upload.single('pdf'), (req, res) => {
   const { id } = req.params;
   const {
     equipment_name,
@@ -242,7 +244,7 @@ router.put('/:id', upload.single('pdf'), (req, res) => {
 });
 
 // Delete calibration
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
 
   // Get the PDF path first to delete the file

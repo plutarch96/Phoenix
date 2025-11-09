@@ -139,6 +139,8 @@ function Navigation() {
               <div style={{ fontWeight: 600 }}>{user.username}</div>
               <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>
                 {user.role === 'admin' ? 'Administrator' :
+                 user.role === 'project_manager' ? 'Project Manager' :
+                 user.role === 'staff' ? 'Staff' :
                  user.role === 'employee' ? 'FRA Employee' : 'Client'}
               </div>
             </div>

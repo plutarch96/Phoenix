@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { verifyToken } = require('../middleware/auth');
+const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
 // Get all projects (optionally filtered by client)
 router.get('/', (req, res) => {
@@ -95,7 +97,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new project
-router.post('/', (req, res) => {
+router.post('/', verifyToken, requireProjectManager, (req, res) => {
   console.log('[PROJECTS] Creating new project:', req.body);
   const { client_id, project_number, project_name, description, status } = req.body;
 
@@ -128,7 +130,7 @@ router.post('/', (req, res) => {
 });
 
 // Update project
-router.put('/:id', (req, res) => {
+router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { project_number, project_name, description, status } = req.body;
 
@@ -150,7 +152,7 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete project
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
 
   // Check if project has tests

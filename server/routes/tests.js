@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { verifyToken } = require('../middleware/auth');
+const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
 // Get all tests with optional filtering
 router.get('/', (req, res) => {
@@ -179,7 +181,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new test
-router.post('/', (req, res) => {
+router.post('/', verifyToken, requireStaffOrAbove, (req, res) => {
   const { title, description, test_type, governing_standard, location, client_id, project_id, test_date, status, tags } = req.body;
 
   if (!title) {
@@ -238,7 +240,7 @@ router.post('/', (req, res) => {
 });
 
 // Update test
-router.put('/:id', (req, res) => {
+router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { title, description, test_type, governing_standard, location, client_id, test_date, status, tags } = req.body;
 
@@ -275,7 +277,7 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete test
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
 
   db.run('DELETE FROM tests WHERE id = ?', [id], function(err) {

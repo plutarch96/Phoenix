@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { verifyToken } = require('../middleware/auth');
+const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
 // Get all clients
 router.get('/', (req, res) => {
@@ -46,7 +48,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new client
-router.post('/', (req, res) => {
+router.post('/', verifyToken, requireProjectManager, (req, res) => {
   console.log('[CLIENTS] Creating new client:', req.body);
   const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
@@ -80,7 +82,7 @@ router.post('/', (req, res) => {
 });
 
 // Update client
-router.put('/:id', (req, res) => {
+router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
@@ -101,7 +103,7 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete client
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
 
   db.run('DELETE FROM clients WHERE id = ?', [id], function(err) {
