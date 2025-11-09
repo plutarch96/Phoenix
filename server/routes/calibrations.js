@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Configure multer for PDF uploads
 const storage = multer.diskStorage({
@@ -181,6 +182,16 @@ router.post('/', verifyToken, requireFRAEmployee, upload.single('pdf'), (req, re
             );
           }
 
+          logAction({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'CREATE',
+            entityType: 'calibration',
+            entityId: newCalibrationId,
+            details: `Created calibration for equipment: ${equipment_name} (${equipment_id})`,
+            ipAddress: req.ip
+          });
+
           res.status(201).json({
             id: newCalibrationId,
             message: existingCalibration ? 'Calibration updated with history logging' : 'Calibration created successfully'
@@ -237,6 +248,16 @@ router.put('/:id', verifyToken, requireFRAEmployee, upload.single('pdf'), (req, 
         }
       );
 
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'calibration',
+        entityId: newCalibrationId,
+        details: `Updated calibration for equipment: ${equipment_name} (${equipment_id})`,
+        ipAddress: req.ip
+      });
+
       res.json({ id: newCalibrationId, message: 'Calibration updated with history logging' });
     }
   );
@@ -263,6 +284,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'DELETE',
+        entityType: 'calibration',
+        entityId: id,
+        details: 'Deleted calibration',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Calibration deleted successfully' });
     });
   });

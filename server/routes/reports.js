@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Configure multer for report uploads
 const storage = multer.diskStorage({
@@ -89,6 +90,16 @@ router.post('/upload', verifyToken, requireFRAEmployee, upload.single('file'), (
 
       console.log('[REPORTS] Report uploaded:', req.file.originalname, 'type:', report_type);
 
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPLOAD',
+        entityType: 'report',
+        entityId: this.lastID,
+        details: `Uploaded ${report_type} report: ${req.file.originalname}`,
+        ipAddress: req.ip
+      });
+
       res.status(201).json({
         id: this.lastID,
         message: 'Report uploaded successfully',
@@ -168,6 +179,17 @@ router.put('/:id', verifyToken, requireFRAEmployee, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'report',
+        entityId: id,
+        details: 'Updated report',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Report updated successfully' });
     }
   );
@@ -196,6 +218,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       console.log('[REPORTS] Report deleted successfully');
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'DELETE',
+        entityType: 'report',
+        entityId: id,
+        details: 'Deleted report',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Report deleted successfully' });
     });
   });

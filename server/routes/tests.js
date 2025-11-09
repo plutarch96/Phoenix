@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
 const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Get all tests with optional filtering
 router.get('/', (req, res) => {
@@ -235,6 +236,16 @@ router.post('/', verifyToken, requireFRAEmployee, (req, res) => {
           stmt.finalize();
         }
 
+        logAction({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'CREATE',
+          entityType: 'test',
+          entityId: testId,
+          details: `Created test: ${title}`,
+          ipAddress: req.ip
+        });
+
         res.status(201).json({ id: testId, test_number, message: 'Test created successfully' });
       }
     );
@@ -273,6 +284,16 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
         });
       }
 
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'test',
+        entityId: id,
+        details: 'Updated test',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Test updated successfully' });
     }
   );
@@ -286,6 +307,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
+
+    logAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: 'DELETE',
+      entityType: 'test',
+      entityId: id,
+      details: 'Deleted test',
+      ipAddress: req.ip
+    });
+
     res.json({ message: 'Test deleted successfully' });
   });
 });
@@ -305,6 +337,17 @@ router.post('/:id/calibrations', verifyToken, requireFRAEmployee, (req, res) => 
         }
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'ADD_CALIBRATION',
+        entityType: 'test',
+        entityId: id,
+        details: `Added calibration ${calibration_id} to test`,
+        ipAddress: req.ip
+      });
+
       res.status(201).json({ message: 'Calibration added to test' });
     }
   );
@@ -321,6 +364,17 @@ router.delete('/:id/calibrations/:calibration_id', verifyToken, requireAdmin, (r
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'REMOVE_CALIBRATION',
+        entityType: 'test',
+        entityId: id,
+        details: `Removed calibration ${calibration_id} from test`,
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Calibration removed from test' });
     }
   );
@@ -411,6 +465,17 @@ router.post('/:id/tag', verifyToken, (req, res) => {
         }
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'TAG',
+        entityType: 'test',
+        entityId: id,
+        details: 'Tagged test as mine',
+        ipAddress: req.ip
+      });
+
       res.status(201).json({ message: 'Test tagged successfully' });
     }
   );
@@ -432,6 +497,17 @@ router.delete('/:id/tag', verifyToken, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UNTAG',
+        entityType: 'test',
+        entityId: id,
+        details: 'Untagged test',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Test untagged successfully' });
     }
   );
@@ -510,6 +586,17 @@ router.post('/:id/join', verifyToken, (req, res) => {
         }
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'JOIN',
+        entityType: 'test',
+        entityId: id,
+        details: 'Joined test',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Joined test successfully', id: this.lastID });
     }
   );
@@ -534,6 +621,17 @@ router.delete('/:id/join', verifyToken, (req, res) => {
       if (this.changes === 0) {
         return res.status(404).json({ error: 'User not found in test members' });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'LEAVE',
+        entityType: 'test',
+        entityId: id,
+        details: 'Left test',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Left test successfully' });
     }
   );

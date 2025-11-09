@@ -377,7 +377,7 @@ function Calibrations() {
                       <td>
                         {cal.pdf_path ? (
                           <a
-                            href={`http://localhost:5000${cal.pdf_path}`}
+                            href={cal.pdf_path}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-primary btn-sm"

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Get all clients
 router.get('/', (req, res) => {
@@ -75,6 +76,17 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
       }
 
       console.log('[CLIENTS] Client created successfully with ID:', this.lastID);
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'CREATE',
+        entityType: 'client',
+        entityId: this.lastID,
+        details: `Created client: ${name}`,
+        ipAddress: req.ip
+      });
+
       res.status(201).json({ id: this.lastID, message: 'Client created successfully' });
     }
   );
@@ -96,6 +108,17 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
         }
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'client',
+        entityId: id,
+        details: 'Updated client',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Client updated successfully' });
     }
   );
@@ -109,6 +132,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
+
+    logAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: 'DELETE',
+      entityType: 'client',
+      entityId: id,
+      details: 'Deleted client',
+      ipAddress: req.ip
+    });
+
     res.json({ message: 'Client deleted successfully' });
   });
 });

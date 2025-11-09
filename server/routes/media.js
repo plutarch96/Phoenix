@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
 const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Configure multer for media uploads
 const storage = multer.diskStorage({
@@ -187,6 +188,17 @@ router.post('/upload', verifyToken, requireFRAEmployee, upload.array('files', 10
     if (err) {
       return res.status(500).json({ error: err.message });
     }
+
+    logAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: 'UPLOAD',
+      entityType: 'media',
+      entityId: test_id,
+      details: `Uploaded ${uploadedFiles.length} file(s) to category: ${category}`,
+      ipAddress: req.ip
+    });
+
     res.status(201).json({
       message: 'Files uploaded successfully',
       files: uploadedFiles
@@ -206,6 +218,17 @@ router.put('/:id', verifyToken, requireFRAEmployee, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'media',
+        entityId: id,
+        details: 'Updated media description',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Media updated successfully' });
     }
   );
@@ -327,6 +350,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'DELETE',
+        entityType: 'media',
+        entityId: id,
+        details: 'Deleted media file',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Media deleted successfully' });
     });
   });
