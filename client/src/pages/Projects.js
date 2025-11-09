@@ -311,31 +311,34 @@ function Projects() {
                               borderRadius: '8px',
                               border: '1px solid var(--border-color)'
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <FolderOpen size={18} color="#3b82f6" />
-                                <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                                  <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
-                                    {project.project_name}
-                                  </h4>
-                                </Link>
-                                <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
-                                  {project.status}
-                                </span>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                  <FolderOpen size={18} color="#3b82f6" />
+                                  <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                      {project.project_name}
+                                    </h4>
+                                  </Link>
+                                  <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                    {project.status}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.875rem', textAlign: 'right' }}>
+                                  <div><strong>PM:</strong> {members.claimed_by ? members.claimed_by.username : 'None'}</div>
+                                  {members.members.length > 0 && (
+                                    <div style={{ marginTop: '0.25rem' }}>
+                                      <strong>Staff:</strong> {members.members.map(m => m.username).join(', ')}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                {client.client_number}-{project.project_number} • Client: {client.client_number} • {project.test_count || 0} test(s) • PM: {members.claimed_by ? members.claimed_by.username : 'None'}
+                                {client.client_number}-{project.project_number} • Client: {client.client_number} • {project.test_count || 0} test(s)
                               </div>
                               {project.description && (
                                 <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                   {project.description}
                                 </p>
-                              )}
-
-                              {/* Staff Label */}
-                              {members.members.length > 0 && (
-                                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Staff:</span> {members.members.map(m => m.username).join(', ')}
-                                </div>
                               )}
 
                               {/* Claim/Join Actions */}
