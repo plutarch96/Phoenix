@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { exportClients, printPage } from '../utils/exportUtils';
+import { exportClients, printPage, formatDate } from '../utils/exportUtils';
 
 function Clients() {
   const { user, isClient, isFRAEmployee, isAdmin, canManageProjects } = useAuth();
@@ -454,7 +454,7 @@ function Clients() {
                                           <span>Type: {test.test_type}</span>
                                         )}
                                         {test.test_date && (
-                                          <span>Date: {new Date(test.test_date).toLocaleDateString()}</span>
+                                          <span>Date: {formatDate(test.test_date)}</span>
                                         )}
                                         {test.governing_standard && (
                                           <span>Standard: {test.governing_standard}</span>

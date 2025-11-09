@@ -4,6 +4,7 @@ import { Plus, Search, Filter, Eye } from 'lucide-react';
 import { testsAPI, clientsAPI, analyticsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TestModal from '../components/TestModal';
+import { formatDate } from '../utils/exportUtils';
 
 function Tests() {
   const { isClient } = useAuth();
@@ -171,7 +172,7 @@ function Tests() {
                     </td>
                     <td>
                       {test.test_date
-                        ? new Date(test.test_date).toLocaleDateString()
+                        ? formatDate(test.test_date)
                         : 'Not set'}
                     </td>
                     <td>

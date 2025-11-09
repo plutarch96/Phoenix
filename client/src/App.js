@@ -175,7 +175,7 @@ function MainApp() {
       <main className="main-content">
         <div className="top-header">
           <h3 style={{ margin: 0 }}>
-            Fire & Risk Alliance Laboratory
+            Fire & Risk Alliance Lab
           </h3>
           <GlobalSearch />
         </div>
