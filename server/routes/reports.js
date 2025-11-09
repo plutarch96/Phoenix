@@ -4,7 +4,7 @@ const db = require('../db/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken, requireStaffOrAbove } = require('../middleware/auth');
+const { verifyToken, requireFRAEmployee } = require('../middleware/auth');
 
 // Configure multer for report uploads
 const storage = multer.diskStorage({
@@ -58,7 +58,7 @@ router.get('/test/:test_id', verifyToken, (req, res) => {
 });
 
 // Upload report
-router.post('/upload', verifyToken, requireStaffOrAbove, upload.single('file'), (req, res) => {
+router.post('/upload', verifyToken, requireFRAEmployee, upload.single('file'), (req, res) => {
   const { test_id, report_type, uploaded_by, notes } = req.body;
 
   console.log('[REPORTS] Upload request:', { test_id, report_type, uploaded_by });
@@ -135,7 +135,7 @@ router.get('/download/:id', verifyToken, (req, res) => {
 });
 
 // Update report type or notes
-router.put('/:id', verifyToken, requireStaffOrAbove, (req, res) => {
+router.put('/:id', verifyToken, requireFRAEmployee, (req, res) => {
   const { id } = req.params;
   const { report_type, notes } = req.body;
 
