@@ -37,7 +37,8 @@ function TestModal({ test, clients, onClose, onSuccess }) {
   const loadProjects = async (clientId) => {
     try {
       const res = await projectsAPI.getAll({ client_id: clientId });
-      setProjects(res.data);
+      // Handle new paginated response format
+      setProjects(res.data.data || res.data);
     } catch (error) {
       console.error('Error loading projects:', error);
     }
