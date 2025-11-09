@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+const { verifyToken } = require('../middleware/auth');
+const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
 
 // Configure multer for media uploads
 const storage = multer.diskStorage({
@@ -100,7 +102,7 @@ const formatFileSize = (bytes) => {
 };
 
 // Upload media file(s)
-router.post('/upload', upload.array('files', 10), (req, res) => {
+router.post('/upload', verifyToken, requireStaffOrAbove, upload.array('files', 10), (req, res) => {
   const { test_id, category, description } = req.body;
 
   console.log('[MEDIA] Upload request:', { test_id, category, files: req.files?.length });
@@ -194,7 +196,7 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
 });
 
 // Update media description
-router.put('/:id', (req, res) => {
+router.put('/:id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
   const { description } = req.body;
 
@@ -306,7 +308,7 @@ router.get('/test/:test_id/category/:category', (req, res) => {
 });
 
 // Delete media
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
 
   // Get the file path first to delete the file
