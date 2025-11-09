@@ -240,6 +240,27 @@ router.post('/', verifyToken, requireFRAEmployee, (req, res) => {
           stmt.finalize();
         }
 
+        // If this test belongs to a project, automatically add all project members to it
+        if (project_id) {
+          // Get project PM
+          db.get('SELECT claimed_by FROM projects WHERE id = ?', [project_id], (err, project) => {
+            if (!err && project && project.claimed_by) {
+              db.run('INSERT OR IGNORE INTO test_members (test_id, user_id) VALUES (?, ?)', [testId, project.claimed_by]);
+            }
+          });
+
+          // Get all project staff members
+          db.all('SELECT user_id FROM project_members WHERE project_id = ?', [project_id], (err, members) => {
+            if (!err && members && members.length > 0) {
+              const stmt = db.prepare('INSERT OR IGNORE INTO test_members (test_id, user_id) VALUES (?, ?)');
+              members.forEach(member => {
+                stmt.run(testId, member.user_id);
+              });
+              stmt.finalize();
+            }
+          });
+        }
+
         logAction({
           userId: req.user.id,
           username: req.user.username,

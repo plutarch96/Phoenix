@@ -404,17 +404,31 @@ router.post('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        logAction({
-          userId: req.user.id,
-          username: req.user.username,
-          action: 'CLAIM',
-          entityType: 'project',
-          entityId: id,
-          details: 'Claimed project',
-          ipAddress: req.ip
-        });
+        // Get all tests in this project and join the PM to them
+        db.all('SELECT id FROM tests WHERE project_id = ?', [id], (err, tests) => {
+          if (err) {
+            console.error('Error getting tests for project:', err);
+          } else if (tests && tests.length > 0) {
+            // Join PM to all tests in the project
+            const stmt = db.prepare('INSERT OR IGNORE INTO test_members (test_id, user_id) VALUES (?, ?)');
+            tests.forEach(test => {
+              stmt.run(test.id, user_id);
+            });
+            stmt.finalize();
+          }
 
-        res.status(200).json({ message: 'Project claimed successfully' });
+          logAction({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'CLAIM',
+            entityType: 'project',
+            entityId: id,
+            details: 'Claimed project and joined all tests',
+            ipAddress: req.ip
+          });
+
+          res.status(200).json({ message: 'Project claimed successfully' });
+        });
       }
     );
   });
@@ -449,17 +463,28 @@ router.delete('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        logAction({
-          userId: req.user.id,
-          username: req.user.username,
-          action: 'UNCLAIM',
-          entityType: 'project',
-          entityId: id,
-          details: 'Unclaimed project',
-          ipAddress: req.ip
-        });
+        // Remove PM from all tests in this project
+        db.run(
+          'DELETE FROM test_members WHERE user_id = ? AND test_id IN (SELECT id FROM tests WHERE project_id = ?)',
+          [user_id, id],
+          (err) => {
+            if (err) {
+              console.error('Error removing user from tests:', err);
+            }
 
-        res.json({ message: 'Project unclaimed successfully' });
+            logAction({
+              userId: req.user.id,
+              username: req.user.username,
+              action: 'UNCLAIM',
+              entityType: 'project',
+              entityId: id,
+              details: 'Unclaimed project and left all tests',
+              ipAddress: req.ip
+            });
+
+            res.json({ message: 'Project unclaimed successfully' });
+          }
+        );
       }
     );
   });
@@ -485,17 +510,31 @@ router.post('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
         return res.status(500).json({ error: err.message });
       }
 
-      logAction({
-        userId: req.user.id,
-        username: req.user.username,
-        action: 'JOIN',
-        entityType: 'project',
-        entityId: id,
-        details: 'Joined project',
-        ipAddress: req.ip
-      });
+      // Get all tests in this project and join the staff member to them
+      db.all('SELECT id FROM tests WHERE project_id = ?', [id], (err, tests) => {
+        if (err) {
+          console.error('Error getting tests for project:', err);
+        } else if (tests && tests.length > 0) {
+          // Join staff to all tests in the project
+          const stmt = db.prepare('INSERT OR IGNORE INTO test_members (test_id, user_id) VALUES (?, ?)');
+          tests.forEach(test => {
+            stmt.run(test.id, user_id);
+          });
+          stmt.finalize();
+        }
 
-      res.status(201).json({ message: 'Joined project successfully' });
+        logAction({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'JOIN',
+          entityType: 'project',
+          entityId: id,
+          details: 'Joined project and all tests',
+          ipAddress: req.ip
+        });
+
+        res.status(201).json({ message: 'Joined project successfully' });
+      });
     }
   );
 });
@@ -517,17 +556,28 @@ router.delete('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
         return res.status(500).json({ error: err.message });
       }
 
-      logAction({
-        userId: req.user.id,
-        username: req.user.username,
-        action: 'LEAVE',
-        entityType: 'project',
-        entityId: id,
-        details: 'Left project',
-        ipAddress: req.ip
-      });
+      // Remove staff from all tests in this project
+      db.run(
+        'DELETE FROM test_members WHERE user_id = ? AND test_id IN (SELECT id FROM tests WHERE project_id = ?)',
+        [user_id, id],
+        (err) => {
+          if (err) {
+            console.error('Error removing user from tests:', err);
+          }
 
-      res.json({ message: 'Left project successfully' });
+          logAction({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'LEAVE',
+            entityType: 'project',
+            entityId: id,
+            details: 'Left project and all tests',
+            ipAddress: req.ip
+          });
+
+          res.json({ message: 'Left project successfully' });
+        }
+      );
     }
   );
 });
