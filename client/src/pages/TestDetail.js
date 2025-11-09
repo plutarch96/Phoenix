@@ -423,59 +423,68 @@ function TestDetail() {
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <span className={`badge ${getStatusBadge(test.status)}`}>
-            {test.status}
-          </span>
-          {test.test_date && (
-            <span style={{ color: '#64748b' }}>
-              📅 {formatDate(test.test_date)}
-            </span>
-          )}
-          {test.test_type && (
-            <span style={{ color: '#64748b' }}>
-              📊 Type: {test.test_type}
-            </span>
-          )}
-          {test.governing_standard && (
-            <span style={{ color: '#64748b', fontWeight: 500 }}>
-              📋 Standard: {test.governing_standard}
-            </span>
-          )}
-        </div>
-        {test.description && (
-          <p style={{ color: '#64748b', marginBottom: '1rem' }}>{test.description}</p>
-        )}
-        {test.location && (
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>Location:</strong> {test.location}
-          </div>
-        )}
-        {test.client_name && (
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>Client:</strong> {test.client_name}
-          </div>
-        )}
-        {test.project_name && (
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>Project:</strong> {test.project_name} (#{test.project_number})
-          </div>
-        )}
-        {test.project_manager && (
-          <div style={{ marginBottom: '0.5rem' }}>
-            <strong>Project Manager:</strong> {test.project_manager}
-          </div>
-        )}
-        {test.tags && test.tags.length > 0 && (
-          <div style={{ marginTop: '1rem' }}>
-            <strong>Tags:</strong>
-            <div className="tags" style={{ marginTop: '0.5rem' }}>
-              {test.tags.map((tag, i) => (
-                <span key={i} className="tag">{tag}</span>
-              ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          {/* Left Column */}
+          <div>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <span className={`badge ${getStatusBadge(test.status)}`}>
+                {test.status}
+              </span>
+              {test.test_date && (
+                <span style={{ color: '#64748b' }}>
+                  📅 {formatDate(test.test_date)}
+                </span>
+              )}
+              {test.test_type && (
+                <span style={{ color: '#64748b' }}>
+                  📊 Type: {test.test_type}
+                </span>
+              )}
+              {test.governing_standard && (
+                <span style={{ color: '#64748b', fontWeight: 500 }}>
+                  📋 Standard: {test.governing_standard}
+                </span>
+              )}
             </div>
+            {test.description && (
+              <p style={{ color: '#64748b', marginBottom: '1rem' }}>{test.description}</p>
+            )}
+            {test.project_name && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Project:</strong> {test.project_name} (#{test.project_number})
+              </div>
+            )}
+            {test.project_manager && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Project Manager:</strong> {test.project_manager}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Right Column */}
+          <div>
+            {test.location && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Location:</strong> {test.location}
+              </div>
+            )}
+            {test.client_name && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Client:</strong> {test.client_name}
+              </div>
+            )}
+            {test.tags && test.tags.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <strong>Tags:</strong>
+                <div className="tags" style={{ marginTop: '0.5rem' }}>
+                  {test.tags.map((tag, i) => (
+                    <span key={i} className="tag">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* TAB NAVIGATION */}
