@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search, ExternalLink, Download, Printer } from 'lucide-react';
+import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clientsAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { exportClients, printPage, formatDate } from '../utils/exportUtils';
+import { exportClients, formatDate } from '../utils/exportUtils';
 
 function Clients() {
   const { user, isClient, isFRAEmployee, isAdmin, canManageProjects } = useAuth();
@@ -231,10 +231,6 @@ function Clients() {
             <Download size={20} />
             Export
           </button>
-          <button className="btn btn-secondary" onClick={printPage} title="Print">
-            <Printer size={20} />
-            Print
-          </button>
           {!isClient() && (
             <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
               <Plus size={20} />
@@ -294,7 +290,7 @@ function Clients() {
                         <h3 style={{ margin: 0 }}>{client.name}</h3>
                         {client.client_number && (
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Client #{client.client_number}
+                            {client.client_number}
                           </div>
                         )}
                       </div>
@@ -404,7 +400,7 @@ function Clients() {
                               </span>
                             </div>
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                              Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                              {client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
                             </div>
                             {project.description && (
                               <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>

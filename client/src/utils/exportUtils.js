@@ -93,6 +93,7 @@ export const exportClients = (clients) => {
  */
 export const exportProjects = (projects) => {
   const exportData = projects.map(project => ({
+    'Client Name': project.client_name || '',
     'Project Number': project.project_number || '',
     'Client Number': project.client_number || '',
     'Project Name': project.project_name || '',

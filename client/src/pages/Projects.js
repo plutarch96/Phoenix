@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Printer, Briefcase, UserPlus } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Briefcase, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { exportProjects, printPage } from '../utils/exportUtils';
+import { exportProjects } from '../utils/exportUtils';
 
 function Projects() {
   const { user, isClient, isFRAEmployee, canManageProjects, isProjectManager, isAdmin, isStaff } = useAuth();
@@ -206,10 +206,6 @@ function Projects() {
             <Download size={20} />
             Export
           </button>
-          <button className="btn btn-secondary" onClick={printPage} title="Print">
-            <Printer size={20} />
-            Print
-          </button>
           {isFRAEmployee() && (
             <button className="btn btn-primary" onClick={() => openNewProjectModal()}>
               <Plus size={20} />
@@ -273,7 +269,7 @@ function Projects() {
                         <h3 style={{ margin: 0 }}>{client.name}</h3>
                       </div>
                       <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        Client #{client.client_number} • {projectCount} project(s)
+                        {client.client_number} • {projectCount} project(s)
                       </div>
                     </div>
                   </div>
@@ -315,46 +311,34 @@ function Projects() {
                               borderRadius: '8px',
                               border: '1px solid var(--border-color)'
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <FolderOpen size={18} color="#3b82f6" />
-                                <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                                  <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
-                                    {project.project_name}
-                                  </h4>
-                                </Link>
-                                <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
-                                  {project.status}
-                                </span>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                  <FolderOpen size={18} color="#3b82f6" />
+                                  <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                      {project.project_name}
+                                    </h4>
+                                  </Link>
+                                  <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                    {project.status}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.875rem', textAlign: 'right' }}>
+                                  <div><strong>PM:</strong> {members.claimed_by ? members.claimed_by.username : 'None'}</div>
+                                  {members.members.length > 0 && (
+                                    <div style={{ marginTop: '0.25rem' }}>
+                                      <strong>Staff:</strong> {members.members.map(m => m.username).join(', ')}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                                {client.client_number}-{project.project_number} • Client: {client.client_number} • {project.test_count || 0} test(s)
                               </div>
                               {project.description && (
                                 <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                   {project.description}
                                 </p>
-                              )}
-
-                              {/* PM and Staff Labels */}
-                              {(members.claimed_by || members.members.length > 0) && (
-                                <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                  {members.claimed_by && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                      <Briefcase size={14} color="#3b82f6" />
-                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Project Manager:</span>
-                                      <span style={{ color: 'var(--text-secondary)' }}>{members.claimed_by.username}</span>
-                                    </div>
-                                  )}
-                                  {members.members.length > 0 && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                      <UserPlus size={14} color="#10b981" />
-                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Staff:</span>
-                                      <span style={{ color: 'var(--text-secondary)' }}>
-                                        {members.members.map(m => m.username).join(', ')}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
                               )}
 
                               {/* Claim/Join Actions */}

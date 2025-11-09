@@ -81,7 +81,7 @@ function Navigation() {
     <nav className="sidebar">
       <div className="sidebar-header">
         <Flame size={32} />
-        <h1>FRA Lab</h1>
+        <h1>FRL Lab</h1>
         <ThemeToggle />
       </div>
       <ul className="nav-menu">
@@ -175,7 +175,7 @@ function MainApp() {
       <main className="main-content">
         <div className="top-header">
           <h3 style={{ margin: 0 }}>
-            Fire & Risk Alliance Lab
+            Fire Research Lab
           </h3>
           <GlobalSearch />
         </div>
