@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, ChevronDown, ChevronRight, Printer } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,11 +9,11 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { exportProjects, printPage } from '../utils/exportUtils';
 
 function Projects() {
-  const { user, isClient, isFRAEmployee } = useAuth();
+  const { user, isClient, isFRAEmployee, canManageProjects } = useAuth();
   const toast = useToast();
-  const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
-  const [expandedProjects, setExpandedProjects] = useState({});
+  const [projectsByClient, setProjectsByClient] = useState({});
+  const [expandedClients, setExpandedClients] = useState({});
   const [loading, setLoading] = useState(true);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -22,42 +22,46 @@ function Projects() {
   const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
-    loadProjects();
-    loadClients();
+    loadClientsAndProjects();
   }, []);
 
-  const loadProjects = async () => {
+  const loadClientsAndProjects = async () => {
     try {
-      // If user is a client, only show projects for their client
-      const params = isClient() && user.client_id ? { client_id: user.client_id, include_tests: true } : { include_tests: true };
-      const res = await projectsAPI.getAll(params);
-      setProjects(res.data);
+      const [clientsRes, projectsRes] = await Promise.all([
+        clientsAPI.getAll(),
+        isClient() && user.client_id
+          ? projectsAPI.getAll({ client_id: user.client_id, include_tests: true })
+          : projectsAPI.getAll({ include_tests: true })
+      ]);
 
-      // Auto-expand first project for client users
-      if (isClient() && res.data.length > 0) {
-        setExpandedProjects({ [res.data[0].id]: true });
+      setClients(clientsRes.data);
+
+      // Group projects by client
+      const grouped = {};
+      projectsRes.data.forEach(project => {
+        if (!grouped[project.client_id]) {
+          grouped[project.client_id] = [];
+        }
+        grouped[project.client_id].push(project);
+      });
+      setProjectsByClient(grouped);
+
+      // Auto-expand first client for client users
+      if (isClient() && clientsRes.data.length > 0) {
+        setExpandedClients({ [clientsRes.data[0].id]: true });
       }
     } catch (error) {
-      console.error('Error loading projects:', error);
+      console.error('Error loading data:', error);
       toast.error('Failed to load projects');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadClients = async () => {
-    try {
-      const res = await clientsAPI.getAll();
-      setClients(res.data);
-    } catch (error) {
-      console.error('Error loading clients:', error);
-    }
-  };
-
-  const toggleProject = (projectId) => {
-    setExpandedProjects(prev => ({
+  const toggleClient = (clientId) => {
+    setExpandedClients(prev => ({
       ...prev,
-      [projectId]: !prev[projectId]
+      [clientId]: !prev[clientId]
     }));
   };
 
@@ -69,7 +73,7 @@ function Projects() {
         try {
           await projectsAPI.delete(projectId);
           toast.success('Project deleted successfully');
-          loadProjects();
+          loadClientsAndProjects();
         } catch (error) {
           console.error('Error deleting project:', error);
           toast.error(error.response?.data?.error || 'Failed to delete project');
@@ -84,12 +88,12 @@ function Projects() {
     setShowProjectModal(false);
     setSelectedProject(null);
     setSelectedClient(null);
-    loadProjects();
+    loadClientsAndProjects();
   };
 
-  const openNewProjectModal = () => {
+  const openNewProjectModal = (client = null) => {
     setSelectedProject(null);
-    setSelectedClient(null);
+    setSelectedClient(client);
     setShowProjectModal(true);
   };
 
@@ -113,18 +117,27 @@ function Projects() {
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`;
   };
 
-  // Filter projects based on search query
-  const filteredProjects = projects.filter(project => {
+  // Filter clients and projects based on search query
+  const filteredClients = clients.filter(client => {
     const query = searchQuery.toLowerCase();
     if (!query) return true;
 
-    return (
+    // Check if client matches
+    if (client.name?.toLowerCase().includes(query) || client.client_number?.toLowerCase().includes(query)) {
+      return true;
+    }
+
+    // Check if any of the client's projects match
+    const clientProjects = projectsByClient[client.id] || [];
+    return clientProjects.some(project =>
       project.project_name?.toLowerCase().includes(query) ||
       project.project_number?.toLowerCase().includes(query) ||
-      project.client_name?.toLowerCase().includes(query) ||
       project.description?.toLowerCase().includes(query)
     );
   });
+
+  // Get all projects for export
+  const allProjects = Object.values(projectsByClient).flat();
 
   return (
     <div className="page">
@@ -133,7 +146,7 @@ function Projects() {
           <h2>Projects</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-secondary" onClick={() => exportProjects(filteredProjects)} title="Export to CSV">
+          <button className="btn btn-secondary" onClick={() => exportProjects(allProjects)} title="Export to CSV">
             <Download size={20} />
             Export
           </button>
@@ -142,7 +155,7 @@ function Projects() {
             Print
           </button>
           {isFRAEmployee() && (
-            <button className="btn btn-primary" onClick={openNewProjectModal}>
+            <button className="btn btn-primary" onClick={() => openNewProjectModal()}>
               <Plus size={20} />
               Add Project
             </button>
@@ -174,193 +187,138 @@ function Projects() {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
-            {searchQuery ? `Found ${filteredProjects.length} project(s)` : `All Projects (${projects.length})`}
+            {searchQuery ? `Found ${filteredClients.length} client(s)` : `All Clients (${clients.length})`}
           </h3>
         </div>
         {loading ? (
           <div className="loading">Loading projects...</div>
-        ) : filteredProjects.length > 0 ? (
+        ) : filteredClients.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {filteredProjects.map(project => (
-              <div key={project.id} className="card" style={{ margin: 0 }}>
-                {/* Project Header */}
+            {filteredClients.map(client => {
+              const clientProjects = projectsByClient[client.id] || [];
+              const projectCount = clientProjects.length;
+
+              return (
+              <div key={client.id} className="card" style={{ margin: 0 }}>
+                {/* Client Header */}
                 <div>
                   <div
                     style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', cursor: 'pointer' }}
-                    onClick={() => toggleProject(project.id)}
+                    onClick={() => toggleClient(client.id)}
                   >
                     <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                      {expandedProjects[project.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                     </button>
                     <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
-                      <FolderOpen size={20} />
+                      <Users size={20} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                          <h3 style={{ margin: 0, color: '#3b82f6', cursor: 'pointer' }}>{project.project_name}</h3>
-                        </Link>
-                        <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
-                          {project.status}
-                        </span>
+                        <h3 style={{ margin: 0 }}>{client.name}</h3>
                       </div>
                       <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        Project #{project.client_number}-{project.project_number} • {project.client_name} • {project.test_count || 0} test(s)
+                        Client #{client.client_number} • {projectCount} project(s)
                       </div>
                     </div>
                   </div>
-
-                  {project.description && (
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', marginLeft: '44px' }}>
-                      {project.description}
-                    </p>
-                  )}
                 </div>
 
-                {/* Expanded Project Details */}
-                {expandedProjects[project.id] && (
+                {/* Expanded Client Projects */}
+                {expandedClients[client.id] && (
                   <div style={{ marginTop: '1.5rem', marginLeft: '44px', borderLeft: '2px solid var(--border-color)', paddingLeft: '1rem' }}>
-                    {/* Client Contact Info */}
-                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                      <h4 style={{ margin: 0, marginBottom: '0.75rem', fontSize: '1rem', fontWeight: 600 }}>
-                        Client Contact Information
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+                        Projects ({projectCount})
                       </h4>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                          <User size={16} />
-                          <strong>{project.client_name}</strong>
-                        </div>
-                        {/* Note: Contact details would come from client data - this is a placeholder */}
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                          Expand the client in the Clients page to view full contact details
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tests Section */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <h4 style={{ margin: 0, marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>
-                        Tests ({project.tests?.length || 0})
-                      </h4>
-                      {project.tests && project.tests.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          {project.tests.map(test => (
-                            <Link
-                              key={test.id}
-                              to={`/tests/${test.id}`}
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.25rem',
-                                padding: '0.75rem',
-                                background: 'var(--bg-secondary)',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                border: '1px solid var(--border-color)',
-                                transition: 'all 0.2s'
-                              }}
-                              className="hover-lift"
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FileText size={14} style={{ color: 'var(--text-secondary)' }} />
-                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#3b82f6' }}>
-                                  {getTestId(project, test)}
-                                </span>
-                                <span className={`badge badge-${
-                                  test.status === 'Complete' ? 'success' :
-                                  test.status === 'Planning' ? 'warning' :
-                                  test.status === 'Cancelled' ? 'danger' : 'secondary'
-                                }`} style={{ marginLeft: 'auto' }}>
-                                  {test.status}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                {test.title}
-                              </div>
-                              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                {test.test_type && (
-                                  <span>Type: {test.test_type}</span>
-                                )}
-                                {test.test_date && (
-                                  <span>Date: {formatDate(test.test_date)}</span>
-                                )}
-                                {test.governing_standard && (
-                                  <span>Standard: {test.governing_standard}</span>
-                                )}
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                          <FileText size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                          <p style={{ margin: 0, fontSize: '0.875rem' }}>No tests in this project yet</p>
-                        </div>
+                      {canManageProjects() && (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => openNewProjectModal(client)}
+                        >
+                          <Plus size={16} />
+                          Add Project
+                        </button>
                       )}
                     </div>
 
-                    {/* Project Documents Section */}
-                    <div style={{ marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
-                          Project Documents
-                        </h4>
-                        {isFRAEmployee() && (
-                          <button className="btn btn-primary btn-sm">
-                            <Upload size={16} />
-                            Upload Document
+                    {clientProjects.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {clientProjects.map(project => (
+                          <div key={project.id} style={{
+                            padding: '1rem',
+                            background: 'var(--bg-tertiary)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-color)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <FolderOpen size={18} color="#3b82f6" />
+                              <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                                <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                  {project.project_name}
+                                </h4>
+                              </Link>
+                              <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                {project.status}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                              Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                            </div>
+                            {project.description && (
+                              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                {project.description}
+                              </p>
+                            )}
+
+                            {/* Project actions */}
+                            {canManageProjects() && (
+                              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => openEditProjectModal(project)}
+                                >
+                                  <Edit2 size={14} />
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDeleteProject(project.id)}
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                        <FolderOpen size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                        <p style={{ margin: 0, fontSize: '0.875rem' }}>No projects for this client yet</p>
+                        {canManageProjects() && (
+                          <button className="btn btn-primary btn-sm" onClick={() => openNewProjectModal(client)} style={{ marginTop: '1rem' }}>
+                            <Plus size={16} />
+                            Create Project
                           </button>
                         )}
                       </div>
-                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                        <FileText size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                        <p style={{ margin: 0, fontSize: '0.875rem' }}>
-                          Document management coming soon
-                        </p>
-                        <p style={{ margin: 0, fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                          Upload proposals, test plans, and client documents
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Project Actions */}
-                {isFRAEmployee() && (
-                  <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => openEditProjectModal(project)}
-                    >
-                      <Edit2 size={14} />
-                      Edit Project
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteProject(project.id)}
-                    >
-                      <Trash2 size={14} />
-                      Delete Project
-                    </button>
+                    )}
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">
             <div className="empty-state-icon">
-              {searchQuery ? <Search size={48} /> : <FolderOpen size={48} />}
+              {searchQuery ? <Search size={48} /> : <Users size={48} />}
             </div>
-            <p>{searchQuery ? `No results found for "${searchQuery}"` : 'No projects yet'}</p>
-            {searchQuery ? (
+            <p>{searchQuery ? `No clients found for "${searchQuery}"` : 'No clients yet'}</p>
+            {searchQuery && (
               <button className="btn btn-secondary" onClick={() => setSearchQuery('')}>
                 Clear Search
-              </button>
-            ) : isFRAEmployee() && (
-              <button className="btn btn-primary" onClick={openNewProjectModal}>
-                Add Your First Project
               </button>
             )}
           </div>

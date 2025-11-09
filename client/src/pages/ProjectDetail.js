@@ -202,7 +202,7 @@ function ProjectDetail() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn btn-primary btn-sm" onClick={() => setShowBulkTestModal(true)}>
                 <List size={16} />
-                Add Multiple Tests
+                Add Tests
               </button>
             </div>
           )}
@@ -328,6 +328,7 @@ function ProjectDetail() {
         <BulkTestModal
           clients={clients}
           project={project}
+          lockClient={true}
           onClose={() => setShowBulkTestModal(false)}
           onSuccess={handleBulkTestsCreated}
         />
