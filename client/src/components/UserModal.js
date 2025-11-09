@@ -118,8 +118,9 @@ function UserModal({ user, clients, onClose, onSuccess }) {
               required
             >
               <option value="">Select a role...</option>
-              <option value="admin">Admin - Full system access</option>
-              <option value="employee">Employee (FRA) - Manage tests and clients</option>
+              <option value="admin">Admin - Full system access & logs</option>
+              <option value="project_manager">Project Manager - Edit & delete everything</option>
+              <option value="staff">Staff - Manage calibrations</option>
               <option value="client">Client - Limited view-only access</option>
             </select>
           </div>
@@ -151,40 +152,52 @@ function UserModal({ user, clients, onClose, onSuccess }) {
           {formData.role && (
             <div style={{
               padding: '1rem',
-              background: formData.role === 'admin' ? '#fef2f2' : formData.role === 'employee' ? '#eff6ff' : '#f0fdf4',
+              background: formData.role === 'admin' ? '#fef2f2' : formData.role === 'project_manager' ? '#fef3c7' : formData.role === 'staff' ? '#eff6ff' : '#f0fdf4',
               borderRadius: '8px',
-              borderLeft: `4px solid ${formData.role === 'admin' ? '#ef4444' : formData.role === 'employee' ? '#3b82f6' : '#10b981'}`,
+              borderLeft: `4px solid ${formData.role === 'admin' ? '#ef4444' : formData.role === 'project_manager' ? '#f59e0b' : formData.role === 'staff' ? '#3b82f6' : '#10b981'}`,
               marginBottom: '1rem'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 {formData.role === 'admin' && <Shield size={18} color="#ef4444" />}
-                {formData.role === 'employee' && <Briefcase size={18} color="#3b82f6" />}
+                {formData.role === 'project_manager' && <Shield size={18} color="#f59e0b" />}
+                {formData.role === 'staff' && <Briefcase size={18} color="#3b82f6" />}
                 {formData.role === 'client' && <UserIcon size={18} color="#10b981" />}
                 <strong style={{
-                  color: formData.role === 'admin' ? '#991b1b' : formData.role === 'employee' ? '#1e40af' : '#065f46'
+                  color: formData.role === 'admin' ? '#991b1b' : formData.role === 'project_manager' ? '#92400e' : formData.role === 'staff' ? '#1e40af' : '#065f46'
                 }}>
-                  {formData.role === 'admin' ? 'Admin Access' : formData.role === 'employee' ? 'FRA Employee Access' : 'Client Access'}
+                  {formData.role === 'admin' ? 'Admin Access' : formData.role === 'project_manager' ? 'Project Manager Access' : formData.role === 'staff' ? 'Staff Access' : 'Client Access'}
                 </strong>
               </div>
               <ul style={{
                 fontSize: '0.875rem',
-                color: formData.role === 'admin' ? '#7f1d1d' : formData.role === 'employee' ? '#1e3a8a' : '#064e3b',
+                color: formData.role === 'admin' ? '#7f1d1d' : formData.role === 'project_manager' ? '#78350f' : formData.role === 'staff' ? '#1e3a8a' : '#064e3b',
                 marginLeft: '1.5rem',
                 marginBottom: 0
               }}>
                 {formData.role === 'admin' && (
                   <>
                     <li>Full access to all features</li>
+                    <li>Can access audit logs</li>
                     <li>Can create and manage users</li>
                     <li>Can manage all clients, projects, and tests</li>
                     <li>Can view and modify calibration records</li>
                   </>
                 )}
-                {formData.role === 'employee' && (
+                {formData.role === 'project_manager' && (
                   <>
-                    <li>Can create and manage tests</li>
-                    <li>Can view and manage client information</li>
+                    <li>Can edit and delete everything</li>
+                    <li>Can manage all clients, projects, and tests</li>
                     <li>Can manage calibration records</li>
+                    <li>Cannot access audit logs</li>
+                    <li>Cannot create or manage users</li>
+                  </>
+                )}
+                {formData.role === 'staff' && (
+                  <>
+                    <li>Can upload and download files</li>
+                    <li>Can edit and delete calibrations</li>
+                    <li>Can view clients, projects, and tests</li>
+                    <li>Cannot edit or delete clients/projects/tests</li>
                     <li>Cannot create or manage users</li>
                   </>
                 )}

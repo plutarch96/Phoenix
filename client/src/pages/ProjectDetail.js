@@ -26,7 +26,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isFRAEmployee } = useAuth();
+  const { user, isFRAEmployee, canManageProjects } = useAuth();
   const toast = useToast();
   const [project, setProject] = useState(null);
   const [client, setClient] = useState(null);
@@ -297,8 +297,11 @@ function ProjectDetail() {
       </div>
 
       {/* EDIT/DELETE ACTIONS */}
-      {isFRAEmployee() && (
+      {canManageProjects() && (
         <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Project Actions</h3>
+          </div>
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <button className="btn btn-secondary" onClick={() => setShowProjectModal(true)}>
               <Edit size={20} />

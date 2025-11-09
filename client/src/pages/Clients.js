@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { exportClients, printPage } from '../utils/exportUtils';
 
 function Clients() {
-  const { user, isClient, isFRAEmployee, isAdmin } = useAuth();
+  const { user, isClient, isFRAEmployee, isAdmin, canManageProjects } = useAuth();
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState({});
   const [expandedClients, setExpandedClients] = useState({});
@@ -350,7 +350,7 @@ function Clients() {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <FolderOpen size={18} color="#3b82f6" />
-                              {editingProjectId === project.id && isFRAEmployee() ? (
+                              {editingProjectId === project.id && canManageProjects() ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
                                   <input
                                     type="text"
@@ -387,7 +387,7 @@ function Clients() {
                                       {project.project_name}
                                     </h4>
                                   </Link>
-                                  {isFRAEmployee() && (
+                                  {canManageProjects() && (
                                     <button
                                       className="btn btn-secondary btn-sm"
                                       onClick={() => startEditingProject(project)}

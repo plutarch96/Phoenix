@@ -17,11 +17,14 @@ router.post('/register', verifyToken, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  if (!['admin', 'employee', 'client'].includes(role)) {
+  if (!['admin', 'project_manager', 'staff', 'employee', 'client'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role' });
   }
 
-  if (role === 'client' && !client_id) {
+  // Map legacy 'employee' role to 'staff' for backward compatibility
+  const normalizedRole = role === 'employee' ? 'staff' : role;
+
+  if (normalizedRole === 'client' && !client_id) {
     return res.status(400).json({ error: 'client_id is required for client users' });
   }
 
@@ -33,7 +36,7 @@ router.post('/register', verifyToken, requireAdmin, async (req, res) => {
     db.run(
       `INSERT INTO users (username, email, password_hash, role, client_id)
        VALUES (?, ?, ?, ?, ?)`,
-      [username, email, password_hash, role, client_id || null],
+      [username, email, password_hash, normalizedRole, client_id || null],
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE')) {
@@ -238,17 +241,20 @@ router.put('/users/:id', verifyToken, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Username, email, and role are required' });
   }
 
-  if (!['admin', 'employee', 'client'].includes(role)) {
+  if (!['admin', 'project_manager', 'staff', 'employee', 'client'].includes(role)) {
     return res.status(400).json({ error: 'Invalid role' });
   }
 
-  if (role === 'client' && !client_id) {
+  // Map legacy 'employee' role to 'staff' for backward compatibility
+  const normalizedRole = role === 'employee' ? 'staff' : role;
+
+  if (normalizedRole === 'client' && !client_id) {
     return res.status(400).json({ error: 'client_id is required for client users' });
   }
 
   try {
     let query = `UPDATE users SET username = ?, email = ?, role = ?, client_id = ?, is_active = ? WHERE id = ?`;
-    let params = [username, email, role, role === 'client' ? client_id : null, is_active !== undefined ? is_active : 1, id];
+    let params = [username, email, normalizedRole, normalizedRole === 'client' ? client_id : null, is_active !== undefined ? is_active : 1, id];
 
     db.run(query, params, function(err) {
       if (err) {
