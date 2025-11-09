@@ -36,6 +36,14 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// Check if user is admin or project manager
+const requireProjectManager = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'project_manager')) {
+    return res.status(403).json({ error: 'Access denied. Project Manager or Admin access required.' });
+  }
+  next();
+};
+
 // Check if user can access specific client data
 const requireClientAccess = (req, res, next) => {
   const clientId = req.params.client_id || req.body.client_id || req.query.client_id;
@@ -94,6 +102,7 @@ module.exports = {
   verifyToken,
   requireFRAEmployee,
   requireAdmin,
+  requireProjectManager,
   requireClientAccess,
   requireTestAccess
 };

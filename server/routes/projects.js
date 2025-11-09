@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
+const { verifyToken, requireAdmin, requireProjectManager, requireFRAEmployee } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
 
 // Get all projects (optionally filtered by client)
@@ -375,7 +375,7 @@ router.get('/user/:user_id/tagged', verifyToken, (req, res) => {
 });
 
 // Claim project (Project Manager only - exclusive)
-router.post('/:id/claim', verifyToken, requireAdmin, (req, res) => {
+router.post('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -421,7 +421,7 @@ router.post('/:id/claim', verifyToken, requireAdmin, (req, res) => {
 });
 
 // Unclaim project (Project Manager only)
-router.delete('/:id/claim', verifyToken, requireAdmin, (req, res) => {
+router.delete('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 

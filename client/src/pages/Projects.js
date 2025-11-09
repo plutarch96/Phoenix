@@ -107,7 +107,8 @@ function Projects() {
     try {
       await projectsAPI.claimProject(projectId, user.id);
       toast.success('Project claimed successfully');
-      loadClientsAndProjects();
+      // Reload all data to ensure fresh state
+      await loadClientsAndProjects();
     } catch (error) {
       console.error('Error claiming project:', error);
       toast.error(error.response?.data?.error || 'Failed to claim project');
@@ -118,7 +119,8 @@ function Projects() {
     try {
       await projectsAPI.unclaimProject(projectId, user.id);
       toast.success('Project unclaimed successfully');
-      loadClientsAndProjects();
+      // Reload all data to ensure fresh state
+      await loadClientsAndProjects();
     } catch (error) {
       console.error('Error unclaiming project:', error);
       toast.error(error.response?.data?.error || 'Failed to unclaim project');
@@ -129,7 +131,8 @@ function Projects() {
     try {
       await projectsAPI.joinProject(projectId, user.id);
       toast.success('Joined project successfully');
-      loadClientsAndProjects();
+      // Reload all data to ensure fresh state
+      await loadClientsAndProjects();
     } catch (error) {
       console.error('Error joining project:', error);
       toast.error(error.response?.data?.error || 'Failed to join project');
@@ -140,7 +143,8 @@ function Projects() {
     try {
       await projectsAPI.leaveProject(projectId, user.id);
       toast.success('Left project successfully');
-      loadClientsAndProjects();
+      // Reload all data to ensure fresh state
+      await loadClientsAndProjects();
     } catch (error) {
       console.error('Error leaving project:', error);
       toast.error(error.response?.data?.error || 'Failed to leave project');
