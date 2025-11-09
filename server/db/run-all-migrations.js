@@ -51,6 +51,26 @@ const migrations = [
     name: 'Calibration UNIQUE Constraint Fix',
     script: 'complete-migration.js',
     description: 'Removes UNIQUE constraint from equipment_id (critical for uploads)'
+  },
+  {
+    name: 'User Project Tags',
+    script: 'migrate-user-project-tags.js',
+    description: 'Creates user_project_tags table for "Mark as Mine" feature'
+  },
+  {
+    name: 'Project Assignments',
+    script: 'migrate-project-assignments.js',
+    description: 'Adds claimed_by and project_members for role-based project assignment'
+  },
+  {
+    name: 'Test Assignments',
+    script: 'migrate-test-assignments.js',
+    description: 'Creates test_members table for test-level team assignments'
+  },
+  {
+    name: 'Updated At Columns',
+    script: 'migrate-add-updated-at.js',
+    description: 'Adds updated_at columns and triggers for activity tracking'
   }
 ];
 
