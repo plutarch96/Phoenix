@@ -55,16 +55,38 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const isFRAEmployee = () => {
-    return user && (user.role === 'admin' || user.role === 'employee');
+  // Staff: Can upload, download, edit, delete calibrations
+  const isStaff = () => {
+    return user && user.role === 'staff';
   };
 
+  // Project Manager: Can edit and delete everything
+  const isProjectManager = () => {
+    return user && user.role === 'project_manager';
+  };
+
+  // Admin: Has access to logs and control over everything
   const isAdmin = () => {
     return user && user.role === 'admin';
   };
 
   const isClient = () => {
     return user && user.role === 'client';
+  };
+
+  // Helper: Can manage calibrations (Staff, Project Manager, Admin)
+  const canManageCalibrations = () => {
+    return user && (user.role === 'staff' || user.role === 'project_manager' || user.role === 'admin');
+  };
+
+  // Helper: Can edit/delete projects and tests (Project Manager, Admin)
+  const canManageProjects = () => {
+    return user && (user.role === 'project_manager' || user.role === 'admin');
+  };
+
+  // Legacy support: Keep isFRAEmployee for backward compatibility (maps to staff + project_manager + admin)
+  const isFRAEmployee = () => {
+    return user && (user.role === 'staff' || user.role === 'project_manager' || user.role === 'admin');
   };
 
   return (
@@ -75,8 +97,12 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       isFRAEmployee,
+      isStaff,
+      isProjectManager,
       isAdmin,
-      isClient
+      isClient,
+      canManageCalibrations,
+      canManageProjects
     }}>
       {children}
     </AuthContext.Provider>
