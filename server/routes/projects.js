@@ -202,4 +202,320 @@ router.get('/:id/next-test-number', (req, res) => {
   );
 });
 
+// Tag project as "mine" for current user
+// When tagging a project, also tag all its tests
+router.post('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  // Start a transaction-like process
+  db.serialize(() => {
+    // Tag the project
+    db.run(
+      'INSERT INTO user_project_tags (user_id, project_id) VALUES (?, ?)',
+      [user_id, id],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'Project already tagged' });
+          }
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Tag all tests in this project
+        db.run(
+          `INSERT INTO user_test_tags (user_id, test_id)
+           SELECT ?, id FROM tests WHERE project_id = ?
+           AND NOT EXISTS (
+             SELECT 1 FROM user_test_tags
+             WHERE user_id = ? AND test_id = tests.id
+           )`,
+          [user_id, id, user_id],
+          function(tagErr) {
+            if (tagErr) {
+              console.error('Error tagging tests for project:', tagErr);
+            }
+            res.status(201).json({
+              message: 'Project and associated tests tagged successfully',
+              tests_tagged: this.changes
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Untag project for current user
+// When untagging a project, also untag all its tests
+router.delete('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.serialize(() => {
+    // Untag the project
+    db.run(
+      'DELETE FROM user_project_tags WHERE user_id = ? AND project_id = ?',
+      [user_id, id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Untag all tests in this project
+        db.run(
+          `DELETE FROM user_test_tags
+           WHERE user_id = ? AND test_id IN (
+             SELECT id FROM tests WHERE project_id = ?
+           )`,
+          [user_id, id],
+          function(untagErr) {
+            if (untagErr) {
+              console.error('Error untagging tests for project:', untagErr);
+            }
+            res.json({
+              message: 'Project and associated tests untagged successfully',
+              tests_untagged: this.changes
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Get projects tagged by user (My Projects)
+router.get('/user/:user_id/tagged', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT DISTINCT p.*, c.name as client_name, c.client_number,
+           COUNT(DISTINCT t.id) as test_count,
+           upt.tagged_at
+    FROM projects p
+    LEFT JOIN clients c ON p.client_id = c.id
+    LEFT JOIN tests t ON p.id = t.project_id
+    INNER JOIN user_project_tags upt ON p.id = upt.project_id
+    WHERE upt.user_id = ?
+    GROUP BY p.id
+    ORDER BY upt.tagged_at DESC
+  `;
+
+  db.all(query, [user_id], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
+// Claim project (Project Manager only - exclusive)
+router.post('/:id/claim', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  // First check if already claimed
+  db.get('SELECT claimed_by FROM projects WHERE id = ?', [id], (err, project) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (project.claimed_by && project.claimed_by != user_id) {
+      return res.status(400).json({ error: 'Project already claimed by another project manager' });
+    }
+
+    // Claim the project
+    db.run(
+      'UPDATE projects SET claimed_by = ? WHERE id = ?',
+      [user_id, id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json({ message: 'Project claimed successfully' });
+      }
+    );
+  });
+});
+
+// Unclaim project (Project Manager only)
+router.delete('/:id/claim', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  // Verify user is the one who claimed it
+  db.get('SELECT claimed_by FROM projects WHERE id = ?', [id], (err, project) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    if (project.claimed_by != user_id) {
+      return res.status(403).json({ error: 'You can only unclaim projects you claimed' });
+    }
+
+    db.run(
+      'UPDATE projects SET claimed_by = NULL WHERE id = ?',
+      [id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: 'Project unclaimed successfully' });
+      }
+    );
+  });
+});
+
+// Join project (Staff - multiple allowed)
+router.post('/:id/join', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.run(
+    'INSERT INTO project_members (project_id, user_id) VALUES (?, ?)',
+    [id, user_id],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Already joined this project' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ message: 'Joined project successfully' });
+    }
+  );
+});
+
+// Leave project (Staff)
+router.delete('/:id/join', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.run(
+    'DELETE FROM project_members WHERE project_id = ? AND user_id = ?',
+    [id, user_id],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Left project successfully' });
+    }
+  );
+});
+
+// Get projects claimed by user (Project Manager)
+router.get('/user/:user_id/claimed', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT p.*, c.name as client_name, c.client_number,
+           COUNT(DISTINCT t.id) as test_count
+    FROM projects p
+    LEFT JOIN clients c ON p.client_id = c.id
+    LEFT JOIN tests t ON p.id = t.project_id
+    WHERE p.claimed_by = ?
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+  `;
+
+  db.all(query, [user_id], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
+// Get projects joined by user (Staff)
+router.get('/user/:user_id/joined', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT DISTINCT p.*, c.name as client_name, c.client_number,
+           COUNT(DISTINCT t.id) as test_count,
+           pm.joined_at
+    FROM projects p
+    LEFT JOIN clients c ON p.client_id = c.id
+    LEFT JOIN tests t ON p.id = t.project_id
+    INNER JOIN project_members pm ON p.id = pm.project_id
+    WHERE pm.user_id = ?
+    GROUP BY p.id
+    ORDER BY pm.joined_at DESC
+  `;
+
+  db.all(query, [user_id], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
+// Get project members and claimant
+router.get('/:id/members', (req, res) => {
+  const { id } = req.params;
+
+  // Get claimed by user
+  db.get(
+    `SELECT u.id, u.username, u.email, u.role
+     FROM users u
+     INNER JOIN projects p ON u.id = p.claimed_by
+     WHERE p.id = ?`,
+    [id],
+    (err, claimedBy) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Get all members
+      db.all(
+        `SELECT u.id, u.username, u.email, u.role, pm.joined_at
+         FROM users u
+         INNER JOIN project_members pm ON u.id = pm.user_id
+         WHERE pm.project_id = ?
+         ORDER BY pm.joined_at ASC`,
+        [id],
+        (err, members) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          res.json({
+            claimed_by: claimedBy || null,
+            members: members || []
+          });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;
