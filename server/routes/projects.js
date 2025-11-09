@@ -206,7 +206,7 @@ router.get('/:id/next-test-number', (req, res) => {
 
 // Tag project as "mine" for current user
 // When tagging a project, also tag all its tests
-router.post('/:id/tag', (req, res) => {
+router.post('/:id/tag', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -254,7 +254,7 @@ router.post('/:id/tag', (req, res) => {
 
 // Untag project for current user
 // When untagging a project, also untag all its tests
-router.delete('/:id/tag', (req, res) => {
+router.delete('/:id/tag', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -295,7 +295,7 @@ router.delete('/:id/tag', (req, res) => {
 });
 
 // Get projects tagged by user (My Projects)
-router.get('/user/:user_id/tagged', (req, res) => {
+router.get('/user/:user_id/tagged', verifyToken, (req, res) => {
   const { user_id } = req.params;
 
   const query = `
@@ -320,7 +320,7 @@ router.get('/user/:user_id/tagged', (req, res) => {
 });
 
 // Claim project (Project Manager only - exclusive)
-router.post('/:id/claim', (req, res) => {
+router.post('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -355,7 +355,7 @@ router.post('/:id/claim', (req, res) => {
 });
 
 // Unclaim project (Project Manager only)
-router.delete('/:id/claim', (req, res) => {
+router.delete('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -389,7 +389,7 @@ router.delete('/:id/claim', (req, res) => {
 });
 
 // Join project (Staff - multiple allowed)
-router.post('/:id/join', (req, res) => {
+router.post('/:id/join', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -413,7 +413,7 @@ router.post('/:id/join', (req, res) => {
 });
 
 // Leave project (Staff)
-router.delete('/:id/join', (req, res) => {
+router.delete('/:id/join', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -434,7 +434,7 @@ router.delete('/:id/join', (req, res) => {
 });
 
 // Get projects claimed by user (Project Manager)
-router.get('/user/:user_id/claimed', (req, res) => {
+router.get('/user/:user_id/claimed', verifyToken, (req, res) => {
   const { user_id } = req.params;
 
   const query = `
@@ -457,7 +457,7 @@ router.get('/user/:user_id/claimed', (req, res) => {
 });
 
 // Get projects joined by user (Staff)
-router.get('/user/:user_id/joined', (req, res) => {
+router.get('/user/:user_id/joined', verifyToken, (req, res) => {
   const { user_id } = req.params;
 
   const query = `
@@ -482,7 +482,7 @@ router.get('/user/:user_id/joined', (req, res) => {
 });
 
 // Get project members and claimant
-router.get('/:id/members', (req, res) => {
+router.get('/:id/members', verifyToken, (req, res) => {
   const { id } = req.params;
 
   // Get claimed by user

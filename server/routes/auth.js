@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
@@ -343,7 +344,10 @@ const initializeDefaultAdmin = async () => {
 
     const defaultUsername = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
     const defaultEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@fralab.com';
-    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'changeme123';
+
+    // Generate a secure random password if not provided in environment
+    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD ||
+      crypto.randomBytes(16).toString('base64').slice(0, 20) + '!Aa1';
 
     try {
       const password_hash = await bcrypt.hash(defaultPassword, 10);
@@ -356,10 +360,16 @@ const initializeDefaultAdmin = async () => {
           if (err) {
             console.error('Error creating default admin:', err);
           } else {
-            console.log('✓ Default admin user created');
+            console.log('\n' + '='.repeat(70));
+            console.log('✓ DEFAULT ADMIN USER CREATED');
+            console.log('='.repeat(70));
             console.log(`  Username: ${defaultUsername}`);
+            console.log(`  Email:    ${defaultEmail}`);
             console.log(`  Password: ${defaultPassword}`);
-            console.log('  ⚠️  CHANGE THE PASSWORD IMMEDIATELY!');
+            console.log('='.repeat(70));
+            console.log('  ⚠️  SAVE THIS PASSWORD NOW - IT WILL NOT BE SHOWN AGAIN!');
+            console.log('  ⚠️  Change password immediately after first login!');
+            console.log('='.repeat(70) + '\n');
           }
         }
       );

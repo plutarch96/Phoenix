@@ -7,6 +7,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Validate environment variables before starting server
+const { validateEnvironment } = require('./utils/validateEnv');
+validateEnvironment();
+
 // Initialize database
 const db = require('./db/database');
 
@@ -38,9 +42,30 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 // Security Middleware
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false // Allow for development; configure properly in production
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for React
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'", "blob:"],
+      frameSrc: ["'none'"],
+    }
+  } : false, // Disable CSP in development for easier debugging
+  hsts: isProduction ? {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  } : false,
+  noSniff: true, // Prevent MIME type sniffing
+  frameguard: { action: 'deny' }, // Prevent clickjacking
+  xssFilter: true // Enable XSS filter
 }));
 
 // Rate limiting
@@ -133,6 +158,52 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+  });
+});
+
+// 404 handler - must be after all routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.path}`
+  });
+});
+
+// Global error handler - must be last
+app.use((err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+
+  // Don't leak error details in production
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  res.status(err.status || 500).json({
+    error: isDevelopment ? err.message : 'Internal Server Error',
+    ...(isDevelopment && { stack: err.stack })
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('UNCAUGHT EXCEPTION! Shutting down gracefully...');
+  console.error(error);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION! Shutting down gracefully...');
+  console.error('Reason:', reason);
+  console.error('Promise:', promise);
+  process.exit(1);
+});
+
+// Graceful shutdown handler
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Closing server gracefully...');
+  server.close(() => {
+    console.log('Server closed. Process terminating...');
+    db.close();
+    process.exit(0);
   });
 });
 

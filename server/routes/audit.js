@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { verifyToken } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/roleChecks');
 
 // Get all audit logs (admin only, with pagination and filtering)
-router.get('/', (req, res) => {
+router.get('/', verifyToken, requireAdmin, (req, res) => {
   const {
     user_id,
     action,
@@ -86,7 +88,7 @@ router.get('/', (req, res) => {
 });
 
 // Get audit logs for a specific entity
-router.get('/entity/:entityType/:entityId', (req, res) => {
+router.get('/entity/:entityType/:entityId', verifyToken, requireAdmin, (req, res) => {
   const { entityType, entityId } = req.params;
 
   db.all(
@@ -104,7 +106,7 @@ router.get('/entity/:entityType/:entityId', (req, res) => {
 });
 
 // Get audit logs for a specific user
-router.get('/user/:userId', (req, res) => {
+router.get('/user/:userId', verifyToken, requireAdmin, (req, res) => {
   const { userId } = req.params;
   const { limit = 50 } = req.query;
 
@@ -124,7 +126,7 @@ router.get('/user/:userId', (req, res) => {
 });
 
 // Get summary statistics
-router.get('/stats', (req, res) => {
+router.get('/stats', verifyToken, requireAdmin, (req, res) => {
   const { start_date, end_date } = req.query;
 
   let dateCondition = '';
