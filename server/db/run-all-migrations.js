@@ -43,6 +43,11 @@ const migrations = [
     description: 'Adds serial_number column to calibrations table'
   },
   {
+    name: 'Updated At Columns',
+    script: 'migrate-add-updated-at.js',
+    description: 'Adds updated_at columns and triggers for activity tracking'
+  },
+  {
     name: 'Calibration History',
     script: 'migrate-calibration-history.js',
     description: 'Adds is_active and superseded_by columns for version tracking'
@@ -66,11 +71,6 @@ const migrations = [
     name: 'Test Assignments',
     script: 'migrate-test-assignments.js',
     description: 'Creates test_members table for test-level team assignments'
-  },
-  {
-    name: 'Updated At Columns',
-    script: 'migrate-add-updated-at.js',
-    description: 'Adds updated_at columns and triggers for activity tracking'
   }
 ];
 
