@@ -290,7 +290,7 @@ function Clients() {
                         <h3 style={{ margin: 0 }}>{client.name}</h3>
                         {client.client_number && (
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            Client #{client.client_number}
+                            {client.client_number}
                           </div>
                         )}
                       </div>
@@ -400,7 +400,7 @@ function Clients() {
                               </span>
                             </div>
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                              Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                              {client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
                             </div>
                             {project.description && (
                               <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>

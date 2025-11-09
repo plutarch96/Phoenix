@@ -269,7 +269,7 @@ function Projects() {
                         <h3 style={{ margin: 0 }}>{client.name}</h3>
                       </div>
                       <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                        Client #{client.client_number} • {projectCount} project(s)
+                        {client.client_number} • {projectCount} project(s)
                       </div>
                     </div>
                   </div>
@@ -323,7 +323,7 @@ function Projects() {
                                 </span>
                               </div>
                               <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                                Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                                {client.client_number}-{project.project_number} • Client: {client.client_number} • {project.test_count || 0} test(s) • PM: {members.claimed_by ? members.claimed_by.username : 'None'}
                               </div>
                               {project.description && (
                                 <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -331,25 +331,10 @@ function Projects() {
                                 </p>
                               )}
 
-                              {/* PM and Staff Labels */}
-                              {(members.claimed_by || members.members.length > 0) && (
-                                <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                  {members.claimed_by && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                      <Briefcase size={14} color="#3b82f6" />
-                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Project Manager:</span>
-                                      <span style={{ color: 'var(--text-secondary)' }}>{members.claimed_by.username}</span>
-                                    </div>
-                                  )}
-                                  {members.members.length > 0 && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                      <UserPlus size={14} color="#10b981" />
-                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Staff:</span>
-                                      <span style={{ color: 'var(--text-secondary)' }}>
-                                        {members.members.map(m => m.username).join(', ')}
-                                      </span>
-                                    </div>
-                                  )}
+                              {/* Staff Label */}
+                              {members.members.length > 0 && (
+                                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Staff:</span> {members.members.map(m => m.username).join(', ')}
                                 </div>
                               )}
 

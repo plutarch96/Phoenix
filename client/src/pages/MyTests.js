@@ -321,7 +321,7 @@ function MyTests() {
                             </span>
                           </div>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                            {project.client_name} • Project #{project.client_number}-{project.project_number} • {project.test_count} test(s)
+                            {project.client_name} • {project.client_number}-{project.project_number} • {project.test_count} test(s)
                           </div>
                           {project.description && (
                             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -374,7 +374,7 @@ function MyTests() {
                             </span>
                           </div>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                            {project.client_name} • Project #{project.client_number}-{project.project_number} • {project.test_count} test(s)
+                            {project.client_name} • {project.client_number}-{project.project_number} • {project.test_count} test(s)
                           </div>
                           {project.description && (
                             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -427,7 +427,7 @@ function MyTests() {
                             </span>
                           </div>
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                            {project.client_name} • Project #{project.client_number}-{project.project_number} • {project.test_count} test(s)
+                            {project.client_name} • {project.client_number}-{project.project_number} • {project.test_count} test(s)
                           </div>
                           {project.description && (
                             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>

@@ -315,7 +315,7 @@ function ProjectDetail() {
                 {project.status}
               </span>
               <span style={{ color: '#64748b' }}>
-                Project #{project.client_number}-{project.project_number}
+                {project.client_number}-{project.project_number}
               </span>
               <span style={{ color: '#64748b' }}>
                 {project.tests?.length || 0} test(s)
@@ -358,7 +358,7 @@ function ProjectDetail() {
                 <div style={{ fontWeight: 600 }}>{client.name}</div>
                 {client.client_number && (
                   <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                    Client #{client.client_number}
+                    {client.client_number}
                   </div>
                 )}
               </div>
