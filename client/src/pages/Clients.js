@@ -193,7 +193,7 @@ function Clients() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>{isClient() ? 'My Projects & Tests' : 'Clients & Projects'}</h2>
+          <h2>Clients</h2>
         </div>
         {!isClient() && (
           <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
