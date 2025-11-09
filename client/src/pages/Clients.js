@@ -482,7 +482,7 @@ function Clients() {
 
                 {/* Client Actions */}
                 {!isClient() && (
-                  <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDeleteClient(client.id)}
