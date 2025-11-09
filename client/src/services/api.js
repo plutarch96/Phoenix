@@ -46,6 +46,8 @@ export const testsAPI = {
     api.post(`/tests/${testId}/calibrations`, { calibration_id: calibrationId }),
   removeCalibration: (testId, calibrationId) =>
     api.delete(`/tests/${testId}/calibrations/${calibrationId}`),
+  downloadCalibrationSheets: (testId) =>
+    api.get(`/tests/${testId}/download-calibration-sheets`, { responseType: 'blob' }),
   // User test tagging
   tagTest: (testId, userId) =>
     api.post(`/tests/${testId}/tag`, { user_id: userId }),

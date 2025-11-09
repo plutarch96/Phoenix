@@ -146,6 +146,23 @@ function TestDetail() {
     window.open(`/api/media/test/${id}/download-category/${category}`, '_blank');
   };
 
+  const handleDownloadCalibrationSheets = async () => {
+    try {
+      const response = await testsAPI.downloadCalibrationSheets(id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `test-${id}-calibration-sheets.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading calibration sheets:', error);
+      alert(error.response?.data?.error || 'Failed to download calibration sheets. Make sure calibration PDFs exist.');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const badges = {
       pending: 'badge-warning',
@@ -377,7 +394,33 @@ function TestDetail() {
 
       {/* TEST SUMMARY - Always visible */}
       <div className="card">
-        <h2 style={{ marginBottom: '0.5rem' }}>{test.title}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem', gap: '1rem' }}>
+          <h2 style={{ marginBottom: '0' }}>{test.title}</h2>
+          {test.reports && test.reports.length > 0 && (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {test.reports.map(report => (
+                <button
+                  key={report.id}
+                  onClick={() => setPreviewReport(report)}
+                  className={`badge ${report.report_type === 'final' ? 'badge-success' : 'badge-warning'}`}
+                  style={{
+                    cursor: 'pointer',
+                    padding: '0.4rem 0.75rem',
+                    fontSize: '0.875rem',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                  title={`Click to preview: ${report.file_name}`}
+                >
+                  <File size={14} />
+                  {report.report_type === 'final' ? 'Final Report' : 'Draft Report'}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <span className={`badge ${getStatusBadge(test.status)}`}>
             {test.status}
@@ -675,7 +718,17 @@ function TestDetail() {
                 onClick={() => handleDownloadCategory('calibration')}
               >
                 <FolderArchive size={16} />
-                Download All as ZIP
+                Download Uploaded Docs
+              </button>
+            )}
+            {test.calibrations && test.calibrations.length > 0 && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleDownloadCalibrationSheets}
+                title="Download calibration sheets from linked equipment"
+              >
+                <FolderArchive size={16} />
+                Download Equipment Sheets
               </button>
             )}
             <button
