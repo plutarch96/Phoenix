@@ -16,7 +16,8 @@ import {
   List,
   Star,
   UserPlus,
-  Users
+  Users,
+  Briefcase
 } from 'lucide-react';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +30,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isFRAEmployee, canManageProjects, isProjectManager, isStaff } = useAuth();
+  const { user, isFRAEmployee, canManageProjects, isProjectManager, isAdmin, isStaff } = useAuth();
   const toast = useToast();
   const [project, setProject] = useState(null);
   const [client, setClient] = useState(null);
@@ -286,16 +287,17 @@ function ProjectDetail() {
 
         {/* Claim/Join buttons */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {isProjectManager() && (
+          {/* PM/Admin can claim */}
+          {(isProjectManager() || isAdmin()) && (
             <>
               {!members.claimed_by ? (
                 <button className="btn btn-primary" onClick={handleClaim}>
-                  <User size={20} />
+                  <Briefcase size={20} />
                   Claim Project
                 </button>
               ) : isClaimed ? (
                 <button className="btn btn-secondary" onClick={handleUnclaim}>
-                  <User size={20} />
+                  <Briefcase size={20} />
                   Unclaim Project
                 </button>
               ) : (
@@ -306,12 +308,13 @@ function ProjectDetail() {
             </>
           )}
 
-          {isStaff() && (
+          {/* All FRA employees (including PM/Admin) can join as staff */}
+          {isFRAEmployee() && (
             <>
               {!isJoined ? (
                 <button className="btn btn-primary" onClick={handleJoin}>
                   <UserPlus size={20} />
-                  Join Project
+                  Join as Staff
                 </button>
               ) : (
                 <button className="btn btn-secondary" onClick={handleLeave}>
