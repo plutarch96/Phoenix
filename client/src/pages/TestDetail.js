@@ -26,6 +26,7 @@ import TestStream from '../components/TestStream';
 import TestModal from '../components/TestModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ReportPreview from '../components/ReportPreview';
+import OBSInstructions from '../components/OBSInstructions';
 import { formatDate } from '../utils/exportUtils';
 
 function TestDetail() {
@@ -605,7 +606,19 @@ function TestDetail() {
 
       {/* LIVE STREAM TAB */}
       {activeTab === 'stream' && (
-        <TestStream testId={id} testTitle={test.title} />
+        <>
+          {/* OBS Instructions - Only visible to FRA employees (staff and above) */}
+          {isFRAEmployee() && (
+            <OBSInstructions
+              testId={id}
+              testTitle={test.title}
+              clientName={test.client_name}
+            />
+          )}
+
+          {/* Stream Viewer - Visible to everyone */}
+          <TestStream testId={id} testTitle={test.title} />
+        </>
       )}
 
       {/* TEST DATA TAB */}
