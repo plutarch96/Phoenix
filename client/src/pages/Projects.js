@@ -255,7 +255,7 @@ function Projects() {
               const projectCount = clientProjects.length;
 
               return (
-              <div key={client.id} className="card" style={{ margin: 0 }}>
+              <div key={client.id} className="card" style={{ margin: 0, background: '#e5e7eb' }}>
                 {/* Client Header */}
                 <div>
                   <div
@@ -263,7 +263,7 @@ function Projects() {
                     onClick={() => toggleClient(client.id)}
                   >
                     <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                      {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      {expandedClients[client.id] ? <ChevronDown size={20} color="#ef4444" /> : <ChevronRight size={20} color="#ef4444" />}
                     </button>
                     <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
                       <Users size={20} />
@@ -347,7 +347,7 @@ function Projects() {
 
                               {/* Claim/Join Actions */}
                               {isFRAEmployee() && (
-                                <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                   {canClaim && (
                                     <button
                                       className="btn btn-primary btn-sm"
