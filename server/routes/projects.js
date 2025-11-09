@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { verifyToken } = require('../middleware/auth');
-const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
+const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
 
 // Get all projects (optionally filtered by client)
 router.get('/', (req, res) => {
@@ -97,7 +96,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new project
-router.post('/', verifyToken, requireProjectManager, (req, res) => {
+router.post('/', verifyToken, requireAdmin, (req, res) => {
   console.log('[PROJECTS] Creating new project:', req.body);
   const { client_id, project_number, project_name, description, status } = req.body;
 
@@ -130,7 +129,7 @@ router.post('/', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Update project
-router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.put('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   const { project_number, project_name, description, status } = req.body;
 
@@ -152,7 +151,7 @@ router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Delete project
-router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
 
   // Check if project has tests
@@ -320,7 +319,7 @@ router.get('/user/:user_id/tagged', verifyToken, (req, res) => {
 });
 
 // Claim project (Project Manager only - exclusive)
-router.post('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
+router.post('/:id/claim', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -355,7 +354,7 @@ router.post('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Unclaim project (Project Manager only)
-router.delete('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
+router.delete('/:id/claim', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -389,7 +388,7 @@ router.delete('/:id/claim', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Join project (Staff - multiple allowed)
-router.post('/:id/join', verifyToken, requireStaffOrAbove, (req, res) => {
+router.post('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -413,7 +412,7 @@ router.post('/:id/join', verifyToken, requireStaffOrAbove, (req, res) => {
 });
 
 // Leave project (Staff)
-router.delete('/:id/join', verifyToken, requireStaffOrAbove, (req, res) => {
+router.delete('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 

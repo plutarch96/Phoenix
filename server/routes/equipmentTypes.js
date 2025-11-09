@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { verifyToken } = require('../middleware/auth');
-const { requireStaffOrAbove, requireAdmin } = require('../middleware/roleChecks');
+const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
 
 // Get all equipment types
 router.get('/', verifyToken, (req, res) => {
@@ -18,7 +17,7 @@ router.get('/', verifyToken, (req, res) => {
 });
 
 // Generate next equipment ID for a type
-router.post('/generate-id', verifyToken, requireStaffOrAbove, (req, res) => {
+router.post('/generate-id', verifyToken, requireFRAEmployee, (req, res) => {
   const { equipment_type } = req.body;
 
   if (!equipment_type) {
