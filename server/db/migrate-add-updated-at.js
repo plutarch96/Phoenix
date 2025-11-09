@@ -18,92 +18,93 @@ db.serialize(() => {
         console.log('✓ calibrations.updated_at column already exists');
       } else {
         console.error('Error adding updated_at to calibrations:', err.message);
+        return;
       }
     } else {
       console.log('✓ Added updated_at column to calibrations table');
+    }
 
-      // Initialize existing rows with created_at value, new rows will use trigger
+    // Initialize existing rows with created_at value, new rows will use trigger
+    db.run(`
+      UPDATE calibrations SET updated_at = COALESCE(created_at, CURRENT_TIMESTAMP)
+    `, (err) => {
+      if (err) {
+        console.error('Error initializing calibrations.updated_at:', err.message);
+        return;
+      }
+      console.log('✓ Initialized calibrations.updated_at with created_at values');
+
+      // Create trigger for tests table
       db.run(`
-        UPDATE calibrations SET updated_at = COALESCE(created_at, CURRENT_TIMESTAMP)
+        CREATE TRIGGER IF NOT EXISTS update_tests_timestamp
+        BEFORE UPDATE ON tests
+        FOR EACH ROW
+        BEGIN
+          UPDATE tests SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+        END;
       `, (err) => {
         if (err) {
-          console.error('Error initializing calibrations.updated_at:', err.message);
-        } else {
-          console.log('✓ Initialized calibrations.updated_at with created_at values');
+          console.error('Error creating tests trigger:', err.message);
+          return;
         }
+        console.log('✓ Created trigger for tests table');
+
+        // Create trigger for projects table
+        db.run(`
+          CREATE TRIGGER IF NOT EXISTS update_projects_timestamp
+          BEFORE UPDATE ON projects
+          FOR EACH ROW
+          BEGIN
+            UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+          END;
+        `, (err) => {
+          if (err) {
+            console.error('Error creating projects trigger:', err.message);
+            return;
+          }
+          console.log('✓ Created trigger for projects table');
+
+          // Create trigger for calibrations table (on UPDATE)
+          db.run(`
+            CREATE TRIGGER IF NOT EXISTS update_calibrations_timestamp
+            BEFORE UPDATE ON calibrations
+            FOR EACH ROW
+            BEGIN
+              UPDATE calibrations SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+            END;
+          `, (err) => {
+            if (err) {
+              console.error('Error creating calibrations UPDATE trigger:', err.message);
+              return;
+            }
+            console.log('✓ Created UPDATE trigger for calibrations table');
+
+            // Create trigger for calibrations table (on INSERT) to set initial updated_at
+            db.run(`
+              CREATE TRIGGER IF NOT EXISTS insert_calibrations_timestamp
+              AFTER INSERT ON calibrations
+              FOR EACH ROW
+              BEGIN
+                UPDATE calibrations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+              END;
+            `, (err) => {
+              if (err) {
+                console.error('Error creating calibrations INSERT trigger:', err.message);
+                return;
+              }
+              console.log('✓ Created INSERT trigger for calibrations table');
+
+              // Close database connection only after all operations complete
+              console.log('\n✅ Migration completed successfully!');
+              db.close((err) => {
+                if (err) {
+                  console.error('Error closing database:', err.message);
+                }
+              });
+            });
+          });
+        });
       });
-    }
+    });
   });
-
-  // Create trigger for tests table
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS update_tests_timestamp
-    BEFORE UPDATE ON tests
-    FOR EACH ROW
-    BEGIN
-      UPDATE tests SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-    END;
-  `, (err) => {
-    if (err) {
-      console.error('Error creating tests trigger:', err.message);
-    } else {
-      console.log('✓ Created trigger for tests table');
-    }
-  });
-
-  // Create trigger for projects table
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS update_projects_timestamp
-    BEFORE UPDATE ON projects
-    FOR EACH ROW
-    BEGIN
-      UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-    END;
-  `, (err) => {
-    if (err) {
-      console.error('Error creating projects trigger:', err.message);
-    } else {
-      console.log('✓ Created trigger for projects table');
-    }
-  });
-
-  // Create trigger for calibrations table (on UPDATE)
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS update_calibrations_timestamp
-    BEFORE UPDATE ON calibrations
-    FOR EACH ROW
-    BEGIN
-      UPDATE calibrations SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-    END;
-  `, (err) => {
-    if (err) {
-      console.error('Error creating calibrations UPDATE trigger:', err.message);
-    } else {
-      console.log('✓ Created UPDATE trigger for calibrations table');
-    }
-  });
-
-  // Create trigger for calibrations table (on INSERT) to set initial updated_at
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS insert_calibrations_timestamp
-    AFTER INSERT ON calibrations
-    FOR EACH ROW
-    BEGIN
-      UPDATE calibrations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-    END;
-  `, (err) => {
-    if (err) {
-      console.error('Error creating calibrations INSERT trigger:', err.message);
-    } else {
-      console.log('✓ Created INSERT trigger for calibrations table');
-    }
-  });
-});
-
-db.close((err) => {
-  if (err) {
-    console.error('Error closing database:', err.message);
-  } else {
-    console.log('Migration completed successfully!');
-  }
 });
