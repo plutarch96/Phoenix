@@ -8,7 +8,8 @@ import {
   FileText,
   Image,
   Video,
-  TrendingUp
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 import { analyticsAPI } from '../services/api';
 
@@ -16,6 +17,7 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [recentTests, setRecentTests] = useState([]);
   const [expiringCalibrations, setExpiringCalibrations] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,14 +26,16 @@ function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [statsRes, testsRes, calibrationsRes] = await Promise.all([
+      const [statsRes, testsRes, calibrationsRes, activityRes] = await Promise.all([
         analyticsAPI.getDashboard(),
         analyticsAPI.getRecentTests(5),
-        analyticsAPI.getExpiringSoonCalibrations()
+        analyticsAPI.getExpiringSoonCalibrations(),
+        analyticsAPI.getRecentActivity(10)
       ]);
       setStats(statsRes.data);
       setRecentTests(testsRes.data);
       setExpiringCalibrations(calibrationsRes.data);
+      setRecentActivity(activityRes.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -243,6 +247,43 @@ function Dashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            <Activity size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Recent Activity
+          </h3>
+        </div>
+        {recentActivity.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {recentActivity.map((activity, index) => (
+              <div
+                key={index}
+                className="dashboard-list-item"
+                style={{ cursor: 'default', textDecoration: 'none' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
+                  <strong className="dashboard-item-title">{activity.description || 'Activity'}</strong>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    {formatDate(activity.created_at)}
+                  </span>
+                </div>
+                {activity.details && (
+                  <div className="dashboard-item-meta">
+                    <span>{activity.details}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No recent activity</p>
+          </div>
+        )}
       </div>
     </div>
   );

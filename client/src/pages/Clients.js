@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search } from 'lucide-react';
+import { Plus, Users as UsersIcon, Mail, Phone, Trash2, ChevronDown, ChevronRight, FolderOpen, FileText, Edit2, Search, ExternalLink, Download, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clientsAPI, projectsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ClientModal from '../components/ClientModal';
 import ProjectModal from '../components/ProjectModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { exportClients, printPage } from '../utils/exportUtils';
 
 function Clients() {
   const { user, isClient, isFRAEmployee, isAdmin } = useAuth();
@@ -19,6 +20,8 @@ function Clients() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editingProjectName, setEditingProjectName] = useState('');
 
   useEffect(() => {
     loadClients();
@@ -157,6 +160,34 @@ function Clients() {
     setShowProjectModal(true);
   };
 
+  const startEditingProject = (project) => {
+    setEditingProjectId(project.id);
+    setEditingProjectName(project.project_name);
+  };
+
+  const cancelEditingProject = () => {
+    setEditingProjectId(null);
+    setEditingProjectName('');
+  };
+
+  const saveProjectName = async (projectId, clientId) => {
+    if (!editingProjectName.trim()) {
+      alert('Project name cannot be empty');
+      return;
+    }
+
+    try {
+      await projectsAPI.update(projectId, { project_name: editingProjectName });
+      // Refresh projects for this client
+      loadProjectsForClient(clientId, true);
+      setEditingProjectId(null);
+      setEditingProjectName('');
+    } catch (error) {
+      console.error('Error updating project name:', error);
+      alert('Failed to update project name');
+    }
+  };
+
   const getTestId = (client, project, test) => {
     const clientNum = client.client_number || '###';
     const projectNum = project.project_number || '###';
@@ -195,12 +226,22 @@ function Clients() {
         <div>
           <h2>Clients</h2>
         </div>
-        {!isClient() && (
-          <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
-            <Plus size={20} />
-            Add Client
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn btn-secondary" onClick={() => exportClients(filteredClients)} title="Export to CSV">
+            <Download size={20} />
+            Export
           </button>
-        )}
+          <button className="btn btn-secondary" onClick={printPage} title="Print">
+            <Printer size={20} />
+            Print
+          </button>
+          {!isClient() && (
+            <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
+              <Plus size={20} />
+              Add Client
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -238,24 +279,30 @@ function Clients() {
               <div key={client.id} className="card" style={{ margin: 0 }}>
                 {/* Client Header */}
                 <div>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', cursor: 'pointer' }}
-                    onClick={() => toggleClient(client.id)}
-                  >
-                    <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                      {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                    </button>
-                    <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
-                      <UsersIcon size={20} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', flex: 1 }}
+                      onClick={() => toggleClient(client.id)}
+                    >
+                      <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                        {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                      </button>
+                      <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
+                        <UsersIcon size={20} />
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0 }}>{client.name}</h3>
+                        {client.client_number && (
+                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            Client #{client.client_number}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h3 style={{ margin: 0 }}>{client.name}</h3>
-                      {client.client_number && (
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                          Client #{client.client_number}
-                        </div>
-                      )}
-                    </div>
+                    <Link to={`/clients/${client.id}`} className="btn btn-secondary btn-sm">
+                      <ExternalLink size={14} />
+                      View Details
+                    </Link>
                   </div>
 
                   {client.contact_email && (
@@ -303,11 +350,55 @@ function Clients() {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                               <FolderOpen size={18} color="#3b82f6" />
-                              <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                                <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
-                                  {project.project_name}
-                                </h4>
-                              </Link>
+                              {editingProjectId === project.id && isFRAEmployee() ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    value={editingProjectName}
+                                    onChange={(e) => setEditingProjectName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        saveProjectName(project.id, client.id);
+                                      } else if (e.key === 'Escape') {
+                                        cancelEditingProject();
+                                      }
+                                    }}
+                                    style={{ fontSize: '1rem', padding: '0.25rem 0.5rem' }}
+                                    autoFocus
+                                  />
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => saveProjectName(project.id, client.id)}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={cancelEditingProject}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none', flex: 1 }}>
+                                    <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                      {project.project_name}
+                                    </h4>
+                                  </Link>
+                                  {isFRAEmployee() && (
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={() => startEditingProject(project)}
+                                      title="Edit project name"
+                                      style={{ padding: '0.25rem 0.5rem' }}
+                                    >
+                                      <Edit2 size={14} />
+                                    </button>
+                                  )}
+                                </>
+                              )}
                               <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
                                 {project.status}
                               </span>
