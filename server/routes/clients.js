@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { verifyToken } = require('../middleware/auth');
-const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
 // Get all clients
 router.get('/', (req, res) => {
@@ -48,7 +47,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new client
-router.post('/', verifyToken, requireProjectManager, (req, res) => {
+router.post('/', verifyToken, requireAdmin, (req, res) => {
   console.log('[CLIENTS] Creating new client:', req.body);
   const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
@@ -82,7 +81,7 @@ router.post('/', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Update client
-router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.put('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   const { name, client_number, contact_email, contact_phone, address, city, state, zip_code } = req.body;
 
@@ -103,7 +102,7 @@ router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Delete client
-router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
 
   db.run('DELETE FROM clients WHERE id = ?', [id], function(err) {

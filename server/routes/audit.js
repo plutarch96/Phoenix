@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { verifyToken } = require('../middleware/auth');
-const { requireAdmin } = require('../middleware/roleChecks');
+const { verifyToken, requireAdmin } = require('../middleware/auth');
 
 // Get all audit logs (admin only, with pagination and filtering)
 router.get('/', verifyToken, requireAdmin, (req, res) => {

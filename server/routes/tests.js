@@ -4,8 +4,7 @@ const db = require('../db/database');
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
-const { verifyToken } = require('../middleware/auth');
-const { requireProjectManager, requireStaffOrAbove } = require('../middleware/roleChecks');
+const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
 
 // Get all tests with optional filtering
 router.get('/', (req, res) => {
@@ -184,7 +183,7 @@ router.get('/:id', (req, res) => {
 });
 
 // Create new test
-router.post('/', verifyToken, requireStaffOrAbove, (req, res) => {
+router.post('/', verifyToken, requireFRAEmployee, (req, res) => {
   const { title, description, test_type, governing_standard, location, client_id, project_id, test_date, status, tags } = req.body;
 
   if (!title) {
@@ -243,7 +242,7 @@ router.post('/', verifyToken, requireStaffOrAbove, (req, res) => {
 });
 
 // Update test
-router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.put('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
   const { title, description, test_type, governing_standard, location, client_id, test_date, status, tags } = req.body;
 
@@ -280,7 +279,7 @@ router.put('/:id', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Delete test
-router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
 
   db.run('DELETE FROM tests WHERE id = ?', [id], function(err) {
@@ -292,7 +291,7 @@ router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
 });
 
 // Add calibration to test
-router.post('/:id/calibrations', verifyToken, requireStaffOrAbove, (req, res) => {
+router.post('/:id/calibrations', verifyToken, requireFRAEmployee, (req, res) => {
   const { id } = req.params;
   const { calibration_id } = req.body;
 
@@ -312,7 +311,7 @@ router.post('/:id/calibrations', verifyToken, requireStaffOrAbove, (req, res) =>
 });
 
 // Remove calibration from test
-router.delete('/:id/calibrations/:calibration_id', verifyToken, requireStaffOrAbove, (req, res) => {
+router.delete('/:id/calibrations/:calibration_id', verifyToken, requireAdmin, (req, res) => {
   const { id, calibration_id } = req.params;
 
   db.run(
