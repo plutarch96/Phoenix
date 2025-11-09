@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
+const { logAction } = require('../utils/auditLogger');
 
 // Get all projects (optionally filtered by client)
 router.get('/', (req, res) => {
@@ -119,6 +120,17 @@ router.post('/', verifyToken, requireAdmin, (req, res) => {
       }
 
       console.log('[PROJECTS] Project created successfully with ID:', this.lastID);
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'CREATE',
+        entityType: 'project',
+        entityId: this.lastID,
+        details: `Created project: ${project_name}`,
+        ipAddress: req.ip
+      });
+
       res.status(201).json({
         id: this.lastID,
         message: 'Project created successfully',
@@ -145,6 +157,17 @@ router.put('/:id', verifyToken, requireAdmin, (req, res) => {
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Project not found' });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'UPDATE',
+        entityType: 'project',
+        entityId: id,
+        details: 'Updated project',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Project updated successfully' });
     }
   );
@@ -173,6 +196,17 @@ router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Project not found' });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'DELETE',
+        entityType: 'project',
+        entityId: id,
+        details: 'Deleted project',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Project deleted successfully' });
     });
   });
@@ -240,6 +274,17 @@ router.post('/:id/tag', verifyToken, (req, res) => {
             if (tagErr) {
               console.error('Error tagging tests for project:', tagErr);
             }
+
+            logAction({
+              userId: req.user.id,
+              username: req.user.username,
+              action: 'TAG',
+              entityType: 'project',
+              entityId: id,
+              details: 'Tagged project as mine',
+              ipAddress: req.ip
+            });
+
             res.status(201).json({
               message: 'Project and associated tests tagged successfully',
               tests_tagged: this.changes
@@ -282,6 +327,17 @@ router.delete('/:id/tag', verifyToken, (req, res) => {
             if (untagErr) {
               console.error('Error untagging tests for project:', untagErr);
             }
+
+            logAction({
+              userId: req.user.id,
+              username: req.user.username,
+              action: 'UNTAG',
+              entityType: 'project',
+              entityId: id,
+              details: 'Untagged project',
+              ipAddress: req.ip
+            });
+
             res.json({
               message: 'Project and associated tests untagged successfully',
               tests_untagged: this.changes
@@ -347,6 +403,17 @@ router.post('/:id/claim', verifyToken, requireAdmin, (req, res) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
+
+        logAction({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'CLAIM',
+          entityType: 'project',
+          entityId: id,
+          details: 'Claimed project',
+          ipAddress: req.ip
+        });
+
         res.status(200).json({ message: 'Project claimed successfully' });
       }
     );
@@ -381,6 +448,17 @@ router.delete('/:id/claim', verifyToken, requireAdmin, (req, res) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
+
+        logAction({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'UNCLAIM',
+          entityType: 'project',
+          entityId: id,
+          details: 'Unclaimed project',
+          ipAddress: req.ip
+        });
+
         res.json({ message: 'Project unclaimed successfully' });
       }
     );
@@ -406,6 +484,17 @@ router.post('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
         }
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'JOIN',
+        entityType: 'project',
+        entityId: id,
+        details: 'Joined project',
+        ipAddress: req.ip
+      });
+
       res.status(201).json({ message: 'Joined project successfully' });
     }
   );
@@ -427,6 +516,17 @@ router.delete('/:id/join', verifyToken, requireFRAEmployee, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+
+      logAction({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'LEAVE',
+        entityType: 'project',
+        entityId: id,
+        details: 'Left project',
+        ipAddress: req.ip
+      });
+
       res.json({ message: 'Left project successfully' });
     }
   );

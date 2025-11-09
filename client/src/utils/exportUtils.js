@@ -1,4 +1,18 @@
 /**
+ * Format date as mm/dd/yyyy
+ * @param {string|Date} dateString - Date to format
+ * @returns {string} Formatted date string
+ */
+export const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`;
+};
+
+/**
  * Export data to CSV file
  * @param {Array} data - Array of objects to export
  * @param {string} filename - Name of the file (without extension)
@@ -67,7 +81,7 @@ export const exportClients = (clients) => {
     'City': client.city || '',
     'State': client.state || '',
     'Zip Code': client.zip_code || '',
-    'Created': client.created_at ? new Date(client.created_at).toLocaleDateString() : ''
+    'Created': formatDate(client.created_at)
   }));
 
   exportToCSV(exportData, 'clients');
@@ -85,8 +99,8 @@ export const exportProjects = (projects) => {
     'Description': project.description || '',
     'Status': project.status || '',
     'Test Count': project.test_count || 0,
-    'Created': project.created_at ? new Date(project.created_at).toLocaleDateString() : '',
-    'Updated': project.updated_at ? new Date(project.updated_at).toLocaleDateString() : ''
+    'Created': formatDate(project.created_at),
+    'Updated': formatDate(project.updated_at)
   }));
 
   exportToCSV(exportData, 'projects');
@@ -104,10 +118,10 @@ export const exportTests = (tests) => {
     'Standard': test.governing_standard || '',
     'Location': test.location || '',
     'Status': test.status || '',
-    'Date': test.test_date ? new Date(test.test_date).toLocaleDateString() : '',
+    'Date': formatDate(test.test_date),
     'Client': test.client_name || '',
     'Description': test.description || '',
-    'Created': test.created_at ? new Date(test.created_at).toLocaleDateString() : ''
+    'Created': formatDate(test.created_at)
   }));
 
   exportToCSV(exportData, 'tests');

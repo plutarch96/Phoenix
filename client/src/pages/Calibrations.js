@@ -4,6 +4,7 @@ import { calibrationsAPI } from '../services/api';
 import CalibrationModal from '../components/CalibrationModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useToast } from '../context/ToastContext';
+import { formatDate } from '../utils/exportUtils';
 
 function Calibrations() {
   const [calibrations, setCalibrations] = useState([]);
@@ -215,7 +216,7 @@ function Calibrations() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h2>Calibration Equipment</h2>
+          <h2>Equipment</h2>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-secondary" onClick={handleExportCSV}>
@@ -358,9 +359,9 @@ function Calibrations() {
                         )}
                       </td>
                       <td>{cal.equipment_id}</td>
-                      <td>{new Date(cal.calibration_date).toLocaleDateString()}</td>
+                      <td>{formatDate(cal.calibration_date)}</td>
                       <td>
-                        {new Date(cal.expiration_date).toLocaleDateString()}
+                        {formatDate(cal.expiration_date)}
                         {isExpiringSoon && !isExpired && (
                           <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.25rem' }}>
                             <AlertTriangle size={12} style={{ display: 'inline', marginRight: '4px' }} />
@@ -377,7 +378,7 @@ function Calibrations() {
                       <td>
                         {cal.pdf_path ? (
                           <a
-                            href={`http://localhost:5000${cal.pdf_path}`}
+                            href={cal.pdf_path}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-primary btn-sm"

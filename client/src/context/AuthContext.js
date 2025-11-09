@@ -55,14 +55,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Staff: Can upload, download, edit, delete calibrations
+  // Staff: Can upload, download, edit, delete calibrations (includes admin)
   const isStaff = () => {
-    return user && user.role === 'staff';
+    return user && (user.role === 'staff' || user.role === 'admin');
   };
 
-  // Project Manager: Can edit and delete everything
+  // Project Manager: Can edit and delete everything (includes admin)
   const isProjectManager = () => {
-    return user && user.role === 'project_manager';
+    return user && (user.role === 'project_manager' || user.role === 'admin');
   };
 
   // Admin: Has access to logs and control over everything

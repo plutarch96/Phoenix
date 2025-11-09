@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import { calibrationsAPI, testsAPI } from '../services/api';
+import { formatDate } from '../utils/exportUtils';
 
 function CalibrationSelector({ testId, onClose, onSuccess }) {
   const [calibrations, setCalibrations] = useState([]);
@@ -117,7 +118,7 @@ function CalibrationSelector({ testId, onClose, onSuccess }) {
                       ID: {cal.equipment_id}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                      Expires: {new Date(cal.expiration_date).toLocaleDateString()}
+                      Expires: {formatDate(cal.expiration_date)}
                     </div>
                   </div>
                   {selectedCalibration?.id === cal.id && (

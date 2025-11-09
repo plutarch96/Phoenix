@@ -26,6 +26,7 @@ import TestStream from '../components/TestStream';
 import TestModal from '../components/TestModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import ReportPreview from '../components/ReportPreview';
+import { formatDate } from '../utils/exportUtils';
 
 function TestDetail() {
   const { id } = useParams();
@@ -886,7 +887,7 @@ function TestDetail() {
                         </span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        Uploaded by {report.uploaded_by_name} on {new Date(report.uploaded_at).toLocaleDateString()}
+                        Uploaded by {report.uploaded_by_name} on {formatDate(report.uploaded_at)}
                         {report.file_size && ` • ${(report.file_size / 1024 / 1024).toFixed(2)} MB`}
                       </div>
                       {report.notes && (
