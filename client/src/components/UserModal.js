@@ -218,10 +218,10 @@ function UserModal({ user, clients, onClose, onSuccess }) {
                 )}
                 {formData.role === 'staff' && (
                   <>
-                    <li>Can upload and download files</li>
-                    <li>Can edit and delete calibrations</li>
-                    <li>Can view clients, projects, and tests</li>
-                    <li>Cannot edit or delete clients/projects/tests</li>
+                    <li>Can add tests and upload test files/media</li>
+                    <li>Can manage calibration equipment</li>
+                    <li>Can view clients and projects</li>
+                    <li>Cannot edit or delete projects</li>
                     <li>Cannot create or manage users</li>
                   </>
                 )}
