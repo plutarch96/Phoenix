@@ -320,6 +320,18 @@ function ProjectDetail() {
               <span style={{ color: '#64748b' }}>
                 {project.tests?.length || 0} test(s)
               </span>
+              {members.claimed_by && (
+                <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Briefcase size={14} />
+                  PM: {members.claimed_by.username}
+                </span>
+              )}
+              {members.members.length > 0 && (
+                <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <UserPlus size={14} />
+                  Staff: {members.members.length}
+                </span>
+              )}
             </div>
             {project.description && (
               <p style={{ color: '#64748b', marginTop: '1rem' }}>{project.description}</p>
@@ -575,10 +587,10 @@ function ProjectDetail() {
           <button
             className={`btn ${isTagged ? 'btn-warning' : 'btn-secondary'}`}
             onClick={handleToggleTag}
-            title={isTagged ? 'Remove from My Projects' : 'Add to My Projects'}
+            title={isTagged ? 'Unfollow this project' : 'Follow this project'}
           >
             <Star size={20} style={{ fill: isTagged ? 'currentColor' : 'none' }} />
-            {isTagged ? 'Remove from My Projects' : 'Mark as Mine'}
+            {isTagged ? 'Unfollow' : 'Follow'}
           </button>
           {canManageProjects() && (
             <>

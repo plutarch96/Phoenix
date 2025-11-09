@@ -94,9 +94,13 @@ router.get('/:id', (req, res) => {
   const { user_id } = req.query; // Optional user_id to check if user has tagged this test
 
   db.get(
-    `SELECT t.*, c.name as client_name, c.contact_email, c.contact_phone
+    `SELECT t.*, c.name as client_name, c.contact_email, c.contact_phone,
+            p.project_name, p.project_number,
+            pm.username as project_manager, pm.email as project_manager_email
      FROM tests t
      LEFT JOIN clients c ON t.client_id = c.id
+     LEFT JOIN projects p ON t.project_id = p.id
+     LEFT JOIN users pm ON p.claimed_by = pm.id
      WHERE t.id = ?`,
     [id],
     (err, test) => {

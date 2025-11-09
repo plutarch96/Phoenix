@@ -452,8 +452,18 @@ function TestDetail() {
           </div>
         )}
         {test.client_name && (
-          <div>
+          <div style={{ marginBottom: '0.5rem' }}>
             <strong>Client:</strong> {test.client_name}
+          </div>
+        )}
+        {test.project_name && (
+          <div style={{ marginBottom: '0.5rem' }}>
+            <strong>Project:</strong> {test.project_name} (#{test.project_number})
+          </div>
+        )}
+        {test.project_manager && (
+          <div style={{ marginBottom: '0.5rem' }}>
+            <strong>Project Manager:</strong> {test.project_manager}
           </div>
         )}
         {test.tags && test.tags.length > 0 && (
@@ -595,11 +605,164 @@ function TestDetail() {
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="card">
-          <div style={{ padding: '1rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Test Overview</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Navigate through the tabs above to view live stream, test data, media, calibrations, documents, and reports for this test.
-            </p>
+          <div className="card-header">
+            <h3 className="card-title">Test Content Summary</h3>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '1rem'
+          }}>
+            {/* Test Data Files */}
+            <button
+              onClick={() => setActiveTab('testdata')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <FileText size={20} color="#3b82f6" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Test Data Files</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {testDataFiles.length}
+              </div>
+            </button>
+
+            {/* Images */}
+            <button
+              onClick={() => setActiveTab('images')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#10b981'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <ImageIcon size={20} color="#10b981" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Images</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {images.length}
+              </div>
+            </button>
+
+            {/* Videos */}
+            <button
+              onClick={() => setActiveTab('videos')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#f59e0b'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <VideoIcon size={20} color="#f59e0b" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Videos</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {videos.length}
+              </div>
+            </button>
+
+            {/* Calibrated Equipment */}
+            <button
+              onClick={() => setActiveTab('calibrations')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#8b5cf6'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <Settings size={20} color="#8b5cf6" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Calibrated Equipment</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {test.calibrations?.length || 0}
+              </div>
+            </button>
+
+            {/* Other Documents */}
+            <button
+              onClick={() => setActiveTab('otherdocs')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#64748b'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <FolderArchive size={20} color="#64748b" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Other Documents</span>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {otherDocs.length}
+              </div>
+            </button>
+
+            {/* Reports */}
+            <button
+              onClick={() => setActiveTab('reports')}
+              style={{
+                padding: '1rem',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#ef4444'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <File size={20} color="#ef4444" />
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Reports</span>
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', gap: '0.75rem', alignItems: 'baseline' }}>
+                <div>
+                  <span style={{ fontSize: '2rem' }}>{test.reports?.filter(r => r.report_type === 'draft').length || 0}</span>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginLeft: '0.25rem' }}>Draft</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '2rem' }}>{test.reports?.filter(r => r.report_type === 'final').length || 0}</span>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginLeft: '0.25rem' }}>Final</span>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       )}
