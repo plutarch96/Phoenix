@@ -74,8 +74,8 @@ function Navigation() {
   // Combine navigation items based on role
   const navItems = isAdmin() ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
-  // My Tests - shown at bottom
-  const myTestsItem = { path: '/my-tests', icon: Tag, label: 'My Tests' };
+  // My Stuff - shown at bottom
+  const myTestsItem = { path: '/my-tests', icon: Tag, label: 'My Stuff' };
 
   return (
     <nav className="sidebar">
@@ -102,7 +102,7 @@ function Navigation() {
         })}
       </ul>
 
-      {/* My Tests - at bottom above user info */}
+      {/* My Stuff - at bottom above user info */}
       {user && (
         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
           <Link
