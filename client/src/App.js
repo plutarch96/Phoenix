@@ -61,8 +61,8 @@ function Navigation() {
   const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/projects', icon: FolderOpen, label: 'Projects' },
-    { path: '/calibrations', icon: Settings, label: 'Calibrations' },
     { path: '/clients', icon: Users, label: 'Clients' },
+    { path: '/calibrations', icon: Settings, label: 'Calibrations' },
   ];
 
   // Admin-only navigation items
