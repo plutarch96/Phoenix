@@ -52,6 +52,35 @@ db.serialize(() => {
     )
   `);
 
+  // Projects table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      status TEXT DEFAULT 'active',
+      claimed_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (claimed_by) REFERENCES users(id)
+    )
+  `);
+
+  // Project members table (staff who join projects)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS project_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(project_id, user_id)
+    )
+  `);
+
   // Tests table
   db.run(`
     CREATE TABLE IF NOT EXISTS tests (
@@ -62,11 +91,13 @@ db.serialize(() => {
       governing_standard TEXT,
       location TEXT,
       client_id INTEGER,
+      project_id INTEGER,
       test_date DATE,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (client_id) REFERENCES clients(id)
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (project_id) REFERENCES projects(id)
     )
   `);
 
@@ -90,6 +121,19 @@ db.serialize(() => {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
       UNIQUE(user_id, test_id)
+    )
+  `);
+
+  // Test members table (users who have joined tests)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS test_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      test_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(test_id, user_id)
     )
   `);
 
@@ -157,6 +201,22 @@ db.serialize(() => {
     )
   `);
 
+  // Audit logs table for tracking all user actions
+  db.run(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      username TEXT,
+      action TEXT NOT NULL,
+      entity_type TEXT,
+      entity_id INTEGER,
+      details TEXT,
+      ip_address TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
   // Test-Calibration junction table (many-to-many)
   db.run(`
     CREATE TABLE IF NOT EXISTS test_calibrations (
@@ -193,15 +253,25 @@ db.serialize(() => {
   db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_users_client ON users(client_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_client_contacts_client ON client_contacts(client_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_projects_claimed_by ON projects(claimed_by)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_project_members_project ON project_members(project_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_project_members_user ON project_members(user_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_client ON tests(client_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_test_project ON tests(project_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_tags_test ON test_tags(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_user_test_tags_user ON user_test_tags(user_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_user_test_tags_test ON user_test_tags(test_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_test_members_test ON test_members(test_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_test_members_user ON test_members(user_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_reports_test ON test_reports(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_media_test ON test_media(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_test ON test_calibrations(test_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_test_cal_cal ON test_calibrations(calibration_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_cal_snapshots_tc ON calibration_snapshots(test_calibration_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp)`);
 
   // Initialize default equipment types for FRA Lab
   const defaultEquipmentTypes = [
