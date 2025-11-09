@@ -19,7 +19,7 @@ import {
   Users,
   Briefcase
 } from 'lucide-react';
-import { projectsAPI, clientsAPI } from '../services/api';
+import { projectsAPI, clientsAPI, testsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
