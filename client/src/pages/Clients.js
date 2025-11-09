@@ -279,7 +279,7 @@ function Clients() {
                       onClick={() => toggleClient(client.id)}
                     >
                       <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                        {expandedClients[client.id] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        {expandedClients[client.id] ? <ChevronDown size={20} color="#ef4444" /> : <ChevronRight size={20} color="#ef4444" />}
                       </button>
                       <div className="stat-icon blue" style={{ width: '40px', height: '40px' }}>
                         <UsersIcon size={20} />
