@@ -4,7 +4,7 @@ const db = require('../db/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken, requireFRAEmployee } = require('../middleware/auth');
+const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
 
 // Configure multer for report uploads
 const storage = multer.diskStorage({
@@ -174,7 +174,7 @@ router.put('/:id', verifyToken, requireFRAEmployee, (req, res) => {
 });
 
 // Delete report
-router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
+router.delete('/:id', verifyToken, requireAdmin, (req, res) => {
   const { id } = req.params;
 
   // Get the file path first to delete the file
