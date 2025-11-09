@@ -18,14 +18,14 @@ function Tests() {
     tag: ''
   });
 
-  // Redirect clients to the clients page
-  if (isClient()) {
-    return <Navigate to="/clients" replace />;
-  }
-
   useEffect(() => {
     loadData();
   }, [filters]);
+
+  // Redirect clients to the clients page (after all hooks)
+  if (isClient()) {
+    return <Navigate to="/clients" replace />;
+  }
 
   const loadData = async () => {
     try {
