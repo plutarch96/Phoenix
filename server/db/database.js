@@ -136,7 +136,8 @@ db.serialize(() => {
       notes TEXT,
       is_active INTEGER DEFAULT 1,
       superseded_by INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
