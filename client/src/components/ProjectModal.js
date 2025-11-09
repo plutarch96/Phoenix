@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { projectsAPI } from '../services/api';
 
-function ProjectModal({ project, client, onClose, onSuccess }) {
+function ProjectModal({ project, client, clients = [], onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     client_id: project?.client_id || client?.id || '',
     project_number: project?.project_number || '',
@@ -72,6 +72,9 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
     }
   };
 
+  // Get the selected client for display purposes
+  const selectedClient = clients.find(c => c.id === parseInt(formData.client_id)) || client;
+
   return (
     <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -109,6 +112,24 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
         ) : (
           <form onSubmit={handleSubmit}>
           <div className="form-group">
+            <label className="form-label">Client *</label>
+            <select
+              name="client_id"
+              className="form-select"
+              value={formData.client_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select a client...</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.client_number} - {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
             <label className="form-label">Project Number *</label>
             <input
               type="text"
@@ -121,7 +142,7 @@ function ProjectModal({ project, client, onClose, onSuccess }) {
               required
             />
             <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              3 digits (auto-padded). Will be formatted as: {client?.client_number || '###'}-{formData.project_number ? formatProjectNumber(formData.project_number) : '###'}-XXX
+              3 digits (auto-padded). Will be formatted as: {selectedClient?.client_number || '###'}-{formData.project_number ? formatProjectNumber(formData.project_number) : '###'}-XXX
             </small>
           </div>
 

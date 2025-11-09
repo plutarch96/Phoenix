@@ -448,6 +448,7 @@ function Projects() {
         <ProjectModal
           project={selectedProject}
           client={selectedClient}
+          clients={clients}
           onClose={() => {
             setShowProjectModal(false);
             setSelectedProject(null);
