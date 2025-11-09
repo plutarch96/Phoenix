@@ -86,7 +86,9 @@ function Users() {
     switch (role) {
       case 'admin':
         return <Shield size={16} color="#ef4444" />;
-      case 'employee':
+      case 'project_manager':
+        return <Shield size={16} color="#f59e0b" />;
+      case 'staff':
         return <Briefcase size={16} color="#3b82f6" />;
       case 'client':
         return <UserIcon size={16} color="#10b981" />;
@@ -98,7 +100,8 @@ function Users() {
   const getRoleBadge = (role) => {
     const badges = {
       admin: 'badge-danger',
-      employee: 'badge-info',
+      project_manager: 'badge-warning',
+      staff: 'badge-info',
       client: 'badge-success'
     };
     return badges[role] || 'badge-secondary';
@@ -107,7 +110,7 @@ function Users() {
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)}`;
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
   const getClientName = (clientId) => {
@@ -231,17 +234,27 @@ function Users() {
               <strong style={{ color: '#991b1b' }}>Admin</strong>
             </div>
             <p style={{ fontSize: '0.875rem', color: '#7f1d1d', margin: 0 }}>
-              Full access to all features, can manage users, clients, tests, and calibrations.
+              Full access to all features, can manage users, access audit logs, and control everything.
+            </p>
+          </div>
+
+          <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <Shield size={20} color="#f59e0b" />
+              <strong style={{ color: '#92400e' }}>Project Manager</strong>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#78350f', margin: 0 }}>
+              Can edit, delete, and create projects, tests, and manage calibrations. Cannot access audit logs or manage users.
             </p>
           </div>
 
           <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <Briefcase size={20} color="#3b82f6" />
-              <strong style={{ color: '#1e40af' }}>Employee (FRA)</strong>
+              <strong style={{ color: '#1e40af' }}>Staff</strong>
             </div>
             <p style={{ fontSize: '0.875rem', color: '#1e3a8a', margin: 0 }}>
-              FRA employees can view and manage tests, calibrations, and client information.
+              Can add tests, upload test files and media, and manage calibration equipment. Cannot edit/delete projects.
             </p>
           </div>
 

@@ -20,9 +20,9 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Check if user is FRA employee (admin or employee role)
+// Check if user is FRA employee (admin, project_manager, or staff role)
 const requireFRAEmployee = (req, res, next) => {
-  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'employee')) {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'project_manager' && req.user.role !== 'staff' && req.user.role !== 'employee')) {
     return res.status(403).json({ error: 'Access denied. FRA employee access required.' });
   }
   next();
@@ -41,7 +41,7 @@ const requireClientAccess = (req, res, next) => {
   const clientId = req.params.client_id || req.body.client_id || req.query.client_id;
 
   // FRA employees can access all clients
-  if (req.user.role === 'admin' || req.user.role === 'employee') {
+  if (req.user.role === 'admin' || req.user.role === 'project_manager' || req.user.role === 'staff' || req.user.role === 'employee') {
     return next();
   }
 
@@ -62,7 +62,7 @@ const requireTestAccess = (testId, callback) => {
     const id = testId || req.params.id;
 
     // FRA employees can access all tests
-    if (req.user.role === 'admin' || req.user.role === 'employee') {
+    if (req.user.role === 'admin' || req.user.role === 'project_manager' || req.user.role === 'staff' || req.user.role === 'employee') {
       return next();
     }
 
