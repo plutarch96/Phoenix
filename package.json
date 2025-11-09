@@ -9,6 +9,10 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install && cd ..",
     "build": "cd client && npm run build",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:unit": "jest --testPathPattern=__tests__/unit",
+    "test:integration": "jest --testPathPattern=__tests__/integration",
     "migrate": "node server/db/migrate.js",
     "migrate-projects": "node server/db/migrate-projects.js",
     "migrate-client-contacts": "node server/db/migrate-client-contacts.js",
@@ -16,6 +20,7 @@
     "migrate-add-serial": "node server/db/migrate-add-serial-number.js",
     "migrate-calibration-history": "node server/db/migrate-calibration-history.js",
     "migrate-audit-log": "node server/db/migrate-audit-log.js",
+    "migrate-indexes": "node server/db/migrate-add-indexes.js",
     "check-db": "node server/db/check-structure.js"
   },
   "keywords": [
@@ -43,6 +48,31 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/jest": "^30.0.0",
+    "concurrently": "^8.2.2",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "server/**/*.js",
+      "!server/index.js",
+      "!server/db/migrate*.js",
+      "!**/node_modules/**",
+      "!**/__tests__/**"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 50,
+        "functions": 50,
+        "lines": 50,
+        "statements": 50
+      }
+    }
   }
 }

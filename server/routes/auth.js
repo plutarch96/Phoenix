@@ -6,12 +6,13 @@ const crypto = require('crypto');
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
+const { validateUser, validateLogin } = require('../middleware/validation');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 // Register new user (admin only)
-router.post('/register', verifyToken, requireAdmin, async (req, res) => {
+router.post('/register', verifyToken, requireAdmin, validateUser, async (req, res) => {
   const { username, email, password, role, client_id } = req.body;
 
   if (!username || !email || !password || !role) {
@@ -71,7 +72,7 @@ router.post('/register', verifyToken, requireAdmin, async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
