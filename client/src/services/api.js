@@ -53,6 +53,15 @@ export const testsAPI = {
     api.delete(`/tests/${testId}/tag`, { data: { user_id: userId } }),
   getTaggedByUser: (userId) =>
     api.get(`/tests/user/${userId}/tagged`),
+  // Test joining (for team assignments)
+  joinTest: (testId, userId) =>
+    api.post(`/tests/${testId}/join`, { user_id: userId }),
+  leaveTest: (testId, userId) =>
+    api.delete(`/tests/${testId}/join`, { data: { user_id: userId } }),
+  getJoinedByUser: (userId) =>
+    api.get(`/tests/user/${userId}/joined`),
+  getTestMembers: (testId) =>
+    api.get(`/tests/${testId}/members`),
 };
 
 // Calibrations API

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Printer } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Upload, Download, Trash2, Edit2, Search, Mail, Phone, User, Users, ChevronDown, ChevronRight, Printer, Briefcase, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { exportProjects, printPage } from '../utils/exportUtils';
 
 function Projects() {
-  const { user, isClient, isFRAEmployee, canManageProjects } = useAuth();
+  const { user, isClient, isFRAEmployee, canManageProjects, isProjectManager, isAdmin, isStaff } = useAuth();
   const toast = useToast();
   const [clients, setClients] = useState([]);
   const [projectsByClient, setProjectsByClient] = useState({});
@@ -20,6 +20,7 @@ function Projects() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [projectMembers, setProjectMembers] = useState({});
 
   useEffect(() => {
     loadClientsAndProjects();
@@ -45,6 +46,17 @@ function Projects() {
         grouped[project.client_id].push(project);
       });
       setProjectsByClient(grouped);
+
+      // Load members for all projects
+      const membersPromises = projectsRes.data.map(project =>
+        projectsAPI.getMembers(project.id).then(res => ({ projectId: project.id, data: res.data }))
+      );
+      const membersResults = await Promise.all(membersPromises);
+      const membersMap = {};
+      membersResults.forEach(({ projectId, data }) => {
+        membersMap[projectId] = data;
+      });
+      setProjectMembers(membersMap);
 
       // Auto-expand first client for client users
       if (isClient() && clientsRes.data.length > 0) {
@@ -89,6 +101,50 @@ function Projects() {
     setSelectedProject(null);
     setSelectedClient(null);
     loadClientsAndProjects();
+  };
+
+  const handleClaim = async (projectId) => {
+    try {
+      await projectsAPI.claimProject(projectId, user.id);
+      toast.success('Project claimed successfully');
+      loadClientsAndProjects();
+    } catch (error) {
+      console.error('Error claiming project:', error);
+      toast.error(error.response?.data?.error || 'Failed to claim project');
+    }
+  };
+
+  const handleUnclaim = async (projectId) => {
+    try {
+      await projectsAPI.unclaimProject(projectId, user.id);
+      toast.success('Project unclaimed successfully');
+      loadClientsAndProjects();
+    } catch (error) {
+      console.error('Error unclaiming project:', error);
+      toast.error(error.response?.data?.error || 'Failed to unclaim project');
+    }
+  };
+
+  const handleJoin = async (projectId) => {
+    try {
+      await projectsAPI.joinProject(projectId, user.id);
+      toast.success('Joined project successfully');
+      loadClientsAndProjects();
+    } catch (error) {
+      console.error('Error joining project:', error);
+      toast.error(error.response?.data?.error || 'Failed to join project');
+    }
+  };
+
+  const handleLeave = async (projectId) => {
+    try {
+      await projectsAPI.leaveProject(projectId, user.id);
+      toast.success('Left project successfully');
+      loadClientsAndProjects();
+    } catch (error) {
+      console.error('Error leaving project:', error);
+      toast.error(error.response?.data?.error || 'Failed to leave project');
+    }
   };
 
   const openNewProjectModal = (client = null) => {
@@ -243,54 +299,129 @@ function Projects() {
 
                     {clientProjects.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {clientProjects.map(project => (
-                          <div key={project.id} style={{
-                            padding: '1rem',
-                            background: 'var(--bg-tertiary)',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-color)'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                              <FolderOpen size={18} color="#3b82f6" />
-                              <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                                <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
-                                  {project.project_name}
-                                </h4>
-                              </Link>
-                              <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
-                                {project.status}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                              Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
-                            </div>
-                            {project.description && (
-                              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                {project.description}
-                              </p>
-                            )}
+                        {clientProjects.map(project => {
+                          const members = projectMembers[project.id] || { claimed_by: null, members: [] };
+                          const isClaimed = members.claimed_by?.id === user.id;
+                          const isJoined = members.members.some(m => m.id === user.id);
+                          const canClaim = (isProjectManager() || isAdmin()) && !members.claimed_by;
+                          const canUnclaim = (isProjectManager() || isAdmin()) && isClaimed;
+                          const canJoin = isFRAEmployee() && !isJoined;
+                          const canLeave = isFRAEmployee() && isJoined;
 
-                            {/* Project actions */}
-                            {canManageProjects() && (
-                              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                <button
-                                  className="btn btn-secondary btn-sm"
-                                  onClick={() => openEditProjectModal(project)}
-                                >
-                                  <Edit2 size={14} />
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleDeleteProject(project.id)}
-                                >
-                                  <Trash2 size={14} />
-                                  Delete
-                                </button>
+                          return (
+                            <div key={project.id} style={{
+                              padding: '1rem',
+                              background: 'var(--bg-tertiary)',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <FolderOpen size={18} color="#3b82f6" />
+                                <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                                  <h4 style={{ margin: 0, fontSize: '1rem', color: '#3b82f6', cursor: 'pointer' }}>
+                                    {project.project_name}
+                                  </h4>
+                                </Link>
+                                <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
+                                  {project.status}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        ))}
+                              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                Project #{client.client_number}-{project.project_number} • {project.test_count || 0} test(s)
+                              </div>
+                              {project.description && (
+                                <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                  {project.description}
+                                </p>
+                              )}
+
+                              {/* PM and Staff Labels */}
+                              {(members.claimed_by || members.members.length > 0) && (
+                                <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                  {members.claimed_by && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                      <Briefcase size={14} color="#3b82f6" />
+                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Project Manager:</span>
+                                      <span style={{ color: 'var(--text-secondary)' }}>{members.claimed_by.username}</span>
+                                    </div>
+                                  )}
+                                  {members.members.length > 0 && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                                      <UserPlus size={14} color="#10b981" />
+                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Staff:</span>
+                                      <span style={{ color: 'var(--text-secondary)' }}>
+                                        {members.members.map(m => m.username).join(', ')}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Claim/Join Actions */}
+                              {isFRAEmployee() && (
+                                <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  {canClaim && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      onClick={() => handleClaim(project.id)}
+                                    >
+                                      <Briefcase size={14} />
+                                      Claim
+                                    </button>
+                                  )}
+                                  {canUnclaim && (
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={() => handleUnclaim(project.id)}
+                                    >
+                                      <Briefcase size={14} />
+                                      Unclaim
+                                    </button>
+                                  )}
+                                  {canJoin && (
+                                    <button
+                                      className="btn btn-primary btn-sm"
+                                      onClick={() => handleJoin(project.id)}
+                                    >
+                                      <UserPlus size={14} />
+                                      Join
+                                    </button>
+                                  )}
+                                  {canLeave && (
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      onClick={() => handleLeave(project.id)}
+                                    >
+                                      <UserPlus size={14} />
+                                      Leave
+                                    </button>
+                                  )}
+
+                                  {/* Edit/Delete actions for those who can manage */}
+                                  {canManageProjects() && (
+                                    <>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => openEditProjectModal(project)}
+                                        style={{ marginLeft: 'auto' }}
+                                      >
+                                        <Edit2 size={14} />
+                                        Edit
+                                      </button>
+                                      <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => handleDeleteProject(project.id)}
+                                      >
+                                        <Trash2 size={14} />
+                                        Delete
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: '8px' }}>

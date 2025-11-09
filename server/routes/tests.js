@@ -421,4 +421,95 @@ router.get('/user/:user_id/tagged', (req, res) => {
   });
 });
 
+// Join test (add user to test_members)
+router.post('/:id/join', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'user_id is required' });
+  }
+
+  db.run(
+    'INSERT INTO test_members (test_id, user_id) VALUES (?, ?)',
+    [id, user_id],
+    function (err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint')) {
+          return res.status(400).json({ error: 'User already joined this test' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Joined test successfully', id: this.lastID });
+    }
+  );
+});
+
+// Leave test (remove user from test_members)
+router.delete('/:id/join', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'user_id is required' });
+  }
+
+  db.run(
+    'DELETE FROM test_members WHERE test_id = ? AND user_id = ?',
+    [id, user_id],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found in test members' });
+      }
+      res.json({ message: 'Left test successfully' });
+    }
+  );
+});
+
+// Get tests joined by a specific user
+router.get('/user/:user_id/joined', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT t.*, c.name as client_name, c.client_number,
+           p.project_name, p.project_number
+    FROM tests t
+    INNER JOIN test_members tm ON t.id = tm.test_id
+    LEFT JOIN clients c ON t.client_id = c.id
+    LEFT JOIN projects p ON t.project_id = p.id
+    WHERE tm.user_id = ?
+    ORDER BY tm.joined_at DESC
+  `;
+
+  db.all(query, [user_id], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// Get members of a specific test
+router.get('/:id/members', (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT u.id, u.username, u.email, u.role, tm.joined_at
+    FROM test_members tm
+    INNER JOIN users u ON tm.user_id = u.id
+    WHERE tm.test_id = ?
+    ORDER BY tm.joined_at ASC
+  `;
+
+  db.all(query, [id], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ members: rows });
+  });
+});
+
 module.exports = router;

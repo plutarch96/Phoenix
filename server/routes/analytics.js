@@ -180,20 +180,146 @@ router.get('/clients/stats', (req, res) => {
 router.get('/activity/recent', (req, res) => {
   const limit = req.query.limit || 10;
 
-  db.all(
-    `SELECT id, title, created_at, 'test' as type FROM tests
-     UNION ALL
-     SELECT id, equipment_name as title, created_at, 'calibration' as type FROM calibrations
-     ORDER BY created_at DESC
-     LIMIT ?`,
-    [limit],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json(rows);
-    }
-  );
+  // Get recent tests with client info
+  const testsQuery = `
+    SELECT
+      t.id,
+      t.title,
+      t.test_type,
+      t.status,
+      t.created_at,
+      t.updated_at,
+      c.name as client_name,
+      c.client_number,
+      p.project_name,
+      p.project_number,
+      'test' as type
+    FROM tests t
+    LEFT JOIN clients c ON t.client_id = c.id
+    LEFT JOIN projects p ON t.project_id = p.id
+    ORDER BY t.created_at DESC
+    LIMIT ?
+  `;
+
+  // Get recent calibrations
+  const calibrationsQuery = `
+    SELECT
+      id,
+      equipment_name,
+      equipment_id,
+      equipment_type,
+      created_at,
+      updated_at,
+      'calibration' as type
+    FROM calibrations
+    ORDER BY created_at DESC
+    LIMIT ?
+  `;
+
+  // Get recent projects with client info
+  const projectsQuery = `
+    SELECT
+      p.id,
+      p.project_name,
+      p.status,
+      p.created_at,
+      p.updated_at,
+      c.name as client_name,
+      c.client_number,
+      'project' as type
+    FROM projects p
+    LEFT JOIN clients c ON p.client_id = c.id
+    ORDER BY p.created_at DESC
+    LIMIT ?
+  `;
+
+  // Execute all queries
+  Promise.all([
+    new Promise((resolve, reject) => {
+      db.all(testsQuery, [limit], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.all(calibrationsQuery, [limit], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.all(projectsQuery, [limit], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    })
+  ])
+    .then(([tests, calibrations, projects]) => {
+      // Combine and format all activities
+      const activities = [];
+
+      // Format tests
+      tests.forEach(test => {
+        const wasRecentlyUpdated = new Date(test.updated_at) > new Date(test.created_at);
+        const projectInfo = test.project_name ? ` for project "${test.project_name}"` : '';
+
+        activities.push({
+          id: test.id,
+          type: 'test',
+          action: wasRecentlyUpdated ? 'updated' : 'created',
+          description: `Test ${wasRecentlyUpdated ? 'updated' : 'created'}: ${test.title}`,
+          details: `${test.client_name || 'Unknown Client'}${projectInfo} • ${test.test_type || 'No type'} • Status: ${test.status}`,
+          entity_id: test.id,
+          timestamp: wasRecentlyUpdated ? test.updated_at : test.created_at,
+          created_at: test.created_at,
+          link: `/tests/${test.id}`
+        });
+      });
+
+      // Format calibrations
+      calibrations.forEach(cal => {
+        const wasRecentlyUpdated = new Date(cal.updated_at) > new Date(cal.created_at);
+
+        activities.push({
+          id: cal.id,
+          type: 'calibration',
+          action: wasRecentlyUpdated ? 'updated' : 'created',
+          description: `Calibration equipment ${wasRecentlyUpdated ? 'updated' : 'added'}: ${cal.equipment_name}`,
+          details: `${cal.equipment_type || 'Unknown type'} • ID: ${cal.equipment_id}`,
+          entity_id: cal.id,
+          timestamp: wasRecentlyUpdated ? cal.updated_at : cal.created_at,
+          created_at: cal.created_at,
+          link: `/calibrations`
+        });
+      });
+
+      // Format projects
+      projects.forEach(project => {
+        const wasRecentlyUpdated = new Date(project.updated_at) > new Date(project.created_at);
+
+        activities.push({
+          id: project.id,
+          type: 'project',
+          action: wasRecentlyUpdated ? 'updated' : 'created',
+          description: `Project ${wasRecentlyUpdated ? 'updated' : 'created'}: ${project.project_name}`,
+          details: `${project.client_name || 'Unknown Client'} • Status: ${project.status}`,
+          entity_id: project.id,
+          timestamp: wasRecentlyUpdated ? project.updated_at : project.created_at,
+          created_at: project.created_at,
+          link: `/projects/${project.id}`
+        });
+      });
+
+      // Sort by timestamp and limit
+      activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      const limitedActivities = activities.slice(0, limit);
+
+      res.json(limitedActivities);
+    })
+    .catch(err => {
+      console.error('Error fetching recent activity:', err);
+      res.status(500).json({ error: err.message });
+    });
 });
 
 // Get recent tests only

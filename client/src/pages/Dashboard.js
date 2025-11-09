@@ -259,25 +259,39 @@ function Dashboard() {
         </div>
         {recentActivity.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {recentActivity.map((activity, index) => (
-              <div
-                key={index}
-                className="dashboard-list-item"
-                style={{ cursor: 'default', textDecoration: 'none' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
-                  <strong className="dashboard-item-title">{activity.description || 'Activity'}</strong>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                    {formatDate(activity.created_at)}
-                  </span>
-                </div>
-                {activity.details && (
-                  <div className="dashboard-item-meta">
-                    <span>{activity.details}</span>
+            {recentActivity.map((activity, index) => {
+              const ActivityWrapper = activity.link ? Link : 'div';
+              const wrapperProps = activity.link
+                ? { to: activity.link, className: 'dashboard-list-item' }
+                : { className: 'dashboard-list-item', style: { cursor: 'default' } };
+
+              return (
+                <ActivityWrapper key={index} {...wrapperProps}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.25rem' }}>
+                    <strong className="dashboard-item-title">{activity.description || 'Activity'}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {activity.action && (
+                        <span className={`badge ${
+                          activity.action === 'created' ? 'badge-success' :
+                          activity.action === 'updated' ? 'badge-warning' :
+                          'badge-secondary'
+                        }`} style={{ fontSize: '0.7rem' }}>
+                          {activity.action}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {formatDate(activity.timestamp || activity.created_at)}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {activity.details && (
+                    <div className="dashboard-item-meta">
+                      <span>{activity.details}</span>
+                    </div>
+                  )}
+                </ActivityWrapper>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">

@@ -16,7 +16,8 @@ import {
   List,
   Star,
   UserPlus,
-  Users
+  Users,
+  Briefcase
 } from 'lucide-react';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +30,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isFRAEmployee, canManageProjects, isProjectManager, isStaff } = useAuth();
+  const { user, isFRAEmployee, canManageProjects, isProjectManager, isAdmin, isStaff } = useAuth();
   const toast = useToast();
   const [project, setProject] = useState(null);
   const [client, setClient] = useState(null);
@@ -42,12 +43,19 @@ function ProjectDetail() {
   const [members, setMembers] = useState({ claimed_by: null, members: [] });
   const [isClaimed, setIsClaimed] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [testMembers, setTestMembers] = useState({});
 
   useEffect(() => {
     loadProject();
     checkIfTagged();
     loadMembers();
   }, [id]);
+
+  useEffect(() => {
+    if (project && project.tests) {
+      loadTestMembers();
+    }
+  }, [project]);
 
   const loadProject = async () => {
     try {
@@ -182,6 +190,50 @@ function ProjectDetail() {
     }
   };
 
+  const loadTestMembers = async () => {
+    if (!project || !project.tests) return;
+
+    try {
+      const promises = project.tests.map(test =>
+        testsAPI.getTestMembers(test.id).then(res => ({ testId: test.id, data: res.data }))
+      );
+      const results = await Promise.all(promises);
+      const membersMap = {};
+      results.forEach(({ testId, data }) => {
+        membersMap[testId] = data.members || [];
+      });
+      setTestMembers(membersMap);
+    } catch (error) {
+      console.error('Error loading test members:', error);
+    }
+  };
+
+  const handleJoinTest = async (testId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await testsAPI.joinTest(testId, user.id);
+      toast.success('Joined test successfully');
+      loadTestMembers();
+    } catch (error) {
+      console.error('Error joining test:', error);
+      toast.error(error.response?.data?.error || 'Failed to join test');
+    }
+  };
+
+  const handleLeaveTest = async (testId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await testsAPI.leaveTest(testId, user.id);
+      toast.success('Left test successfully');
+      loadTestMembers();
+    } catch (error) {
+      console.error('Error leaving test:', error);
+      toast.error('Failed to leave test');
+    }
+  };
+
   const getTestId = (test) => {
     const clientNum = project.client_number || '###';
     const projectNum = project.project_number || '###';
@@ -220,7 +272,44 @@ function ProjectDetail() {
             <FolderOpen size={24} />
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ marginBottom: '0.5rem' }}>{project.project_name}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+              <h2 style={{ margin: 0 }}>{project.project_name}</h2>
+
+              {/* Claim/Join buttons in top right */}
+              {isFRAEmployee() && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {/* PM/Admin can claim */}
+                  {(isProjectManager() || isAdmin()) && (
+                    <>
+                      {!members.claimed_by ? (
+                        <button className="btn btn-primary btn-sm" onClick={handleClaim}>
+                          <Briefcase size={16} />
+                          Claim
+                        </button>
+                      ) : isClaimed ? (
+                        <button className="btn btn-secondary btn-sm" onClick={handleUnclaim}>
+                          <Briefcase size={16} />
+                          Unclaim
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+
+                  {/* All FRA employees can join as staff */}
+                  {!isJoined ? (
+                    <button className="btn btn-primary btn-sm" onClick={handleJoin}>
+                      <UserPlus size={16} />
+                      Join
+                    </button>
+                  ) : (
+                    <button className="btn btn-secondary btn-sm" onClick={handleLeave}>
+                      <UserPlus size={16} />
+                      Leave
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
               <span className={`badge badge-${project.status === 'active' ? 'success' : 'secondary'}`}>
                 {project.status}
@@ -284,44 +373,6 @@ function ProjectDetail() {
           </div>
         )}
 
-        {/* Claim/Join buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {isProjectManager() && (
-            <>
-              {!members.claimed_by ? (
-                <button className="btn btn-primary" onClick={handleClaim}>
-                  <User size={20} />
-                  Claim Project
-                </button>
-              ) : isClaimed ? (
-                <button className="btn btn-secondary" onClick={handleUnclaim}>
-                  <User size={20} />
-                  Unclaim Project
-                </button>
-              ) : (
-                <div style={{ padding: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  Already claimed by {members.claimed_by.username}
-                </div>
-              )}
-            </>
-          )}
-
-          {isStaff() && (
-            <>
-              {!isJoined ? (
-                <button className="btn btn-primary" onClick={handleJoin}>
-                  <UserPlus size={20} />
-                  Join Project
-                </button>
-              ) : (
-                <button className="btn btn-secondary" onClick={handleLeave}>
-                  <UserPlus size={20} />
-                  Leave Project
-                </button>
-              )}
-            </>
-          )}
-        </div>
       </div>
 
       {/* CLIENT CONTACT INFORMATION */}
@@ -384,61 +435,104 @@ function ProjectDetail() {
         </div>
         {project.tests && project.tests.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {project.tests.map(test => (
-              <Link
-                key={test.id}
-                to={`/tests/${test.id}`}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem',
-                  padding: '1rem',
-                  background: 'var(--bg-secondary)',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  border: '1px solid var(--border-color)',
-                  transition: 'all 0.2s'
-                }}
-                className="hover-lift"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <FileText size={18} style={{ color: 'var(--text-secondary)' }} />
-                  <span style={{ fontWeight: 600, color: '#3b82f6', fontSize: '1rem' }}>
-                    {getTestId(test)}
-                  </span>
-                  <span className={`badge badge-${
-                    test.status === 'Complete' ? 'success' :
-                    test.status === 'Planning' ? 'warning' :
-                    test.status === 'Cancelled' ? 'danger' : 'secondary'
-                  }`}>
-                    {test.status}
-                  </span>
-                </div>
-                <div style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                  {test.title}
-                </div>
-                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-                  {test.test_type && (
-                    <span>Type: {test.test_type}</span>
-                  )}
-                  {test.test_date && (
-                    <span>Date: {formatDate(test.test_date)}</span>
-                  )}
-                  {test.governing_standard && (
-                    <span>Standard: {test.governing_standard}</span>
-                  )}
-                  {test.location && (
-                    <span>Location: {test.location}</span>
-                  )}
-                </div>
-                {test.description && (
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                    {test.description}
+            {project.tests.map(test => {
+              const members = testMembers[test.id] || [];
+              const isJoinedTest = members.some(m => m.id === user.id);
+
+              return (
+                <div
+                  key={test.id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    padding: '1rem',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                >
+                  <Link
+                    to={`/tests/${test.id}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <FileText size={18} style={{ color: 'var(--text-secondary)' }} />
+                      <span style={{ fontWeight: 600, color: '#3b82f6', fontSize: '1rem' }}>
+                        {getTestId(test)}
+                      </span>
+                      <span className={`badge badge-${
+                        test.status === 'Complete' ? 'success' :
+                        test.status === 'Planning' ? 'warning' :
+                        test.status === 'Cancelled' ? 'danger' : 'secondary'
+                      }`}>
+                        {test.status}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '0.5rem' }}>
+                      {test.title}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                      {test.test_type && (
+                        <span>Type: {test.test_type}</span>
+                      )}
+                      {test.test_date && (
+                        <span>Date: {formatDate(test.test_date)}</span>
+                      )}
+                      {test.governing_standard && (
+                        <span>Standard: {test.governing_standard}</span>
+                      )}
+                      {test.location && (
+                        <span>Location: {test.location}</span>
+                      )}
+                    </div>
+                    {test.description && (
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                        {test.description}
+                      </div>
+                    )}
+                  </Link>
+
+                  {/* Test members and join/leave buttons */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                      {members.length > 0 && (
+                        <>
+                          <Users size={14} color="var(--text-secondary)" />
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {members.map(m => m.username).join(', ')}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {isFRAEmployee() && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {!isJoinedTest ? (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={(e) => handleJoinTest(test.id, e)}
+                          >
+                            <UserPlus size={14} />
+                            Join
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={(e) => handleLeaveTest(test.id, e)}
+                          >
+                            <UserPlus size={14} />
+                            Leave
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </Link>
-            ))}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">
