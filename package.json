@@ -21,6 +21,7 @@
     "migrate-calibration-history": "node server/db/migrate-calibration-history.js",
     "migrate-audit-log": "node server/db/migrate-audit-log.js",
     "migrate-indexes": "node server/db/migrate-add-indexes.js",
+    "migrate-password-reset": "node server/db/migrate-password-reset.js",
     "check-db": "node server/db/check-structure.js"
   },
   "keywords": [

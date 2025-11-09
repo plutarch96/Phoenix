@@ -7,6 +7,7 @@ const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
 const { validateUser, validateLogin } = require('../middleware/validation');
+const { sendPasswordResetEmail, sendPasswordChangedEmail } = require('../utils/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -382,5 +383,303 @@ const initializeDefaultAdmin = async () => {
 
 // Call initialization
 setTimeout(initializeDefaultAdmin, 1000);
+
+// ============================================================================
+// PASSWORD RESET ENDPOINTS
+// ============================================================================
+
+/**
+ * Request password reset
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ */
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    // Find user by email
+    db.get('SELECT id, username, email FROM users WHERE email = ?', [email], async (err, user) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      // Always return success to prevent email enumeration attacks
+      // Don't reveal whether the email exists or not
+      if (!user) {
+        console.log(`Password reset requested for non-existent email: ${email}`);
+        return res.json({ message: 'If the email exists, a password reset link has been sent.' });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Store reset token in database
+      db.run(
+        `INSERT INTO password_reset_tokens (user_id, token, expires_at)
+         VALUES (?, ?, ?)`,
+        [user.id, resetToken, expiresAt.toISOString()],
+        async (err) => {
+          if (err) {
+            console.error('Error creating reset token:', err);
+            return res.status(500).json({ error: 'Error creating reset token' });
+          }
+
+          // Send reset email
+          try {
+            await sendPasswordResetEmail(user.email, resetToken, user.username);
+
+            // Log password reset request
+            logAction({
+              userId: user.id,
+              username: user.username,
+              action: 'PASSWORD_RESET_REQUEST',
+              details: 'Password reset token generated',
+              ipAddress: req.ip
+            });
+
+            res.json({ message: 'If the email exists, a password reset link has been sent.' });
+          } catch (emailError) {
+            console.error('Error sending reset email:', emailError);
+            return res.status(500).json({ error: 'Error sending reset email' });
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error in forgot-password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Verify reset token
+ * GET /api/auth/verify-reset-token/:token
+ */
+router.get('/verify-reset-token/:token', (req, res) => {
+  const { token } = req.params;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token is required' });
+  }
+
+  db.get(
+    `SELECT prt.*, u.username, u.email
+     FROM password_reset_tokens prt
+     JOIN users u ON prt.user_id = u.id
+     WHERE prt.token = ? AND prt.used = 0`,
+    [token],
+    (err, resetToken) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (!resetToken) {
+        return res.status(400).json({ error: 'Invalid or already used reset token' });
+      }
+
+      // Check if token is expired
+      const now = new Date();
+      const expiresAt = new Date(resetToken.expires_at);
+
+      if (now > expiresAt) {
+        return res.status(400).json({ error: 'Reset token has expired' });
+      }
+
+      res.json({
+        valid: true,
+        username: resetToken.username,
+        email: resetToken.email
+      });
+    }
+  );
+});
+
+/**
+ * Reset password with token
+ * POST /api/auth/reset-password
+ * Body: { token, newPassword }
+ */
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+  }
+
+  try {
+    // Find valid reset token
+    db.get(
+      `SELECT prt.*, u.id as user_id, u.username, u.email
+       FROM password_reset_tokens prt
+       JOIN users u ON prt.user_id = u.id
+       WHERE prt.token = ? AND prt.used = 0`,
+      [token],
+      async (err, resetToken) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (!resetToken) {
+          return res.status(400).json({ error: 'Invalid or already used reset token' });
+        }
+
+        // Check if token is expired
+        const now = new Date();
+        const expiresAt = new Date(resetToken.expires_at);
+
+        if (now > expiresAt) {
+          return res.status(400).json({ error: 'Reset token has expired' });
+        }
+
+        // Hash new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        // Update user's password
+        db.run(
+          'UPDATE users SET password_hash = ? WHERE id = ?',
+          [passwordHash, resetToken.user_id],
+          (err) => {
+            if (err) {
+              console.error('Error updating password:', err);
+              return res.status(500).json({ error: 'Error updating password' });
+            }
+
+            // Mark token as used
+            db.run(
+              'UPDATE password_reset_tokens SET used = 1 WHERE id = ?',
+              [resetToken.id],
+              async (err) => {
+                if (err) {
+                  console.error('Error marking token as used:', err);
+                }
+
+                // Send confirmation email
+                try {
+                  await sendPasswordChangedEmail(resetToken.email, resetToken.username);
+                } catch (emailError) {
+                  console.error('Error sending confirmation email:', emailError);
+                }
+
+                // Log password reset
+                logAction({
+                  userId: resetToken.user_id,
+                  username: resetToken.username,
+                  action: 'PASSWORD_RESET',
+                  details: 'Password reset completed',
+                  ipAddress: req.ip
+                });
+
+                res.json({ message: 'Password reset successfully' });
+              }
+            );
+          }
+        );
+      }
+    );
+  } catch (error) {
+    console.error('Error in reset-password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * Change password (for logged-in users)
+ * POST /api/auth/change-password
+ * Body: { currentPassword, newPassword }
+ */
+router.post('/change-password', verifyToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+  }
+
+  if (currentPassword === newPassword) {
+    return res.status(400).json({ error: 'New password must be different from current password' });
+  }
+
+  try {
+    // Get user's current password hash
+    db.get(
+      'SELECT id, username, email, password_hash FROM users WHERE id = ?',
+      [userId],
+      async (err, user) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Verify current password
+        try {
+          const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+
+          if (!isValidPassword) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+          }
+
+          // Hash new password
+          const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+          // Update password
+          db.run(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [newPasswordHash, userId],
+            async (err) => {
+              if (err) {
+                console.error('Error updating password:', err);
+                return res.status(500).json({ error: 'Error updating password' });
+              }
+
+              // Send confirmation email
+              try {
+                await sendPasswordChangedEmail(user.email, user.username);
+              } catch (emailError) {
+                console.error('Error sending confirmation email:', emailError);
+              }
+
+              // Log password change
+              logAction({
+                userId: user.id,
+                username: user.username,
+                action: 'PASSWORD_CHANGE',
+                details: 'Password changed by user',
+                ipAddress: req.ip
+              });
+
+              res.json({ message: 'Password changed successfully' });
+            }
+          );
+        } catch (error) {
+          console.error('Error verifying password:', error);
+          return res.status(500).json({ error: 'Error verifying password' });
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error in change-password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 module.exports = router;
