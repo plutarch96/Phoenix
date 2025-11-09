@@ -202,4 +202,119 @@ router.get('/:id/next-test-number', (req, res) => {
   );
 });
 
+// Tag project as "mine" for current user
+// When tagging a project, also tag all its tests
+router.post('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  // Start a transaction-like process
+  db.serialize(() => {
+    // Tag the project
+    db.run(
+      'INSERT INTO user_project_tags (user_id, project_id) VALUES (?, ?)',
+      [user_id, id],
+      function(err) {
+        if (err) {
+          if (err.message.includes('UNIQUE')) {
+            return res.status(400).json({ error: 'Project already tagged' });
+          }
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Tag all tests in this project
+        db.run(
+          `INSERT INTO user_test_tags (user_id, test_id)
+           SELECT ?, id FROM tests WHERE project_id = ?
+           AND NOT EXISTS (
+             SELECT 1 FROM user_test_tags
+             WHERE user_id = ? AND test_id = tests.id
+           )`,
+          [user_id, id, user_id],
+          function(tagErr) {
+            if (tagErr) {
+              console.error('Error tagging tests for project:', tagErr);
+            }
+            res.status(201).json({
+              message: 'Project and associated tests tagged successfully',
+              tests_tagged: this.changes
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Untag project for current user
+// When untagging a project, also untag all its tests
+router.delete('/:id/tag', (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  db.serialize(() => {
+    // Untag the project
+    db.run(
+      'DELETE FROM user_project_tags WHERE user_id = ? AND project_id = ?',
+      [user_id, id],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        // Untag all tests in this project
+        db.run(
+          `DELETE FROM user_test_tags
+           WHERE user_id = ? AND test_id IN (
+             SELECT id FROM tests WHERE project_id = ?
+           )`,
+          [user_id, id],
+          function(untagErr) {
+            if (untagErr) {
+              console.error('Error untagging tests for project:', untagErr);
+            }
+            res.json({
+              message: 'Project and associated tests untagged successfully',
+              tests_untagged: this.changes
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// Get projects tagged by user (My Projects)
+router.get('/user/:user_id/tagged', (req, res) => {
+  const { user_id } = req.params;
+
+  const query = `
+    SELECT DISTINCT p.*, c.name as client_name, c.client_number,
+           COUNT(DISTINCT t.id) as test_count,
+           upt.tagged_at
+    FROM projects p
+    LEFT JOIN clients c ON p.client_id = c.id
+    LEFT JOIN tests t ON p.id = t.project_id
+    INNER JOIN user_project_tags upt ON p.id = upt.project_id
+    WHERE upt.user_id = ?
+    GROUP BY p.id
+    ORDER BY upt.tagged_at DESC
+  `;
+
+  db.all(query, [user_id], (err, projects) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(projects);
+  });
+});
+
 module.exports = router;

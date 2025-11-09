@@ -86,6 +86,13 @@ export const projectsAPI = {
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
   getNextTestNumber: (id) => api.get(`/projects/${id}/next-test-number`),
+  // User project tagging
+  tagProject: (projectId, userId) =>
+    api.post(`/projects/${projectId}/tag`, { user_id: userId }),
+  untagProject: (projectId, userId) =>
+    api.delete(`/projects/${projectId}/tag`, { data: { user_id: userId } }),
+  getTaggedByUser: (userId) =>
+    api.get(`/projects/user/${userId}/tagged`),
 };
 
 // Media API

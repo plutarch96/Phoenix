@@ -13,7 +13,8 @@ import {
   Phone,
   Building,
   Plus,
-  List
+  List,
+  Star
 } from 'lucide-react';
 import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -35,9 +36,11 @@ function ProjectDetail() {
   const [showBulkTestModal, setShowBulkTestModal] = useState(false);
   const [clients, setClients] = useState([]);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [isTagged, setIsTagged] = useState(false);
 
   useEffect(() => {
     loadProject();
+    checkIfTagged();
   }, [id]);
 
   const loadProject = async () => {
@@ -90,6 +93,32 @@ function ProjectDetail() {
       },
       onCancel: () => setConfirmDialog(null)
     });
+  };
+
+  const checkIfTagged = async () => {
+    try {
+      const res = await projectsAPI.getTaggedByUser(user.id);
+      const tagged = res.data.some(p => p.id == id);
+      setIsTagged(tagged);
+    } catch (error) {
+      console.error('Error checking if project is tagged:', error);
+    }
+  };
+
+  const handleToggleTag = async () => {
+    try {
+      if (isTagged) {
+        await projectsAPI.untagProject(id, user.id);
+        toast.success('Removed from My Projects');
+      } else {
+        await projectsAPI.tagProject(id, user.id);
+        toast.success('Added to My Projects');
+      }
+      setIsTagged(!isTagged);
+    } catch (error) {
+      console.error('Error toggling project tag:', error);
+      toast.error('Failed to update project tag');
+    }
   };
 
   const getTestId = (test) => {
@@ -297,23 +326,34 @@ function ProjectDetail() {
       </div>
 
       {/* EDIT/DELETE ACTIONS */}
-      {canManageProjects() && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Project Actions</h3>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button className="btn btn-secondary" onClick={() => setShowProjectModal(true)}>
-              <Edit size={20} />
-              Edit Project
-            </button>
-            <button className="btn btn-danger" onClick={handleDelete}>
-              <Trash2 size={20} />
-              Delete Project
-            </button>
-          </div>
+      {/* MARK AS MINE / PROJECT ACTIONS */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">{canManageProjects() ? 'Project Actions' : 'My Projects'}</h3>
         </div>
-      )}
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${isTagged ? 'btn-warning' : 'btn-secondary'}`}
+            onClick={handleToggleTag}
+            title={isTagged ? 'Remove from My Projects' : 'Add to My Projects'}
+          >
+            <Star size={20} style={{ fill: isTagged ? 'currentColor' : 'none' }} />
+            {isTagged ? 'Remove from My Projects' : 'Mark as Mine'}
+          </button>
+          {canManageProjects() && (
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowProjectModal(true)}>
+                <Edit size={20} />
+                Edit Project
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete}>
+                <Trash2 size={20} />
+                Delete Project
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       {showProjectModal && (
         <ProjectModal
