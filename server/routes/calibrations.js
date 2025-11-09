@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { verifyToken, requireFRAEmployee, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
+const { validateCalibration, validateId, validatePagination } = require('../middleware/validation');
 
 // Configure multer for PDF uploads
 const storage = multer.diskStorage({
@@ -34,8 +35,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Get all calibrations (active only by default)
-router.get('/', (req, res) => {
+// Get all calibrations (active only by default) - REQUIRES AUTHENTICATION
+router.get('/', verifyToken, validatePagination, (req, res) => {
   const { status, equipment_id, include_history } = req.query;
 
   let query = 'SELECT * FROM calibrations';

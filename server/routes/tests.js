@@ -6,9 +6,10 @@ const fs = require('fs');
 const archiver = require('archiver');
 const { verifyToken, requireAdmin, requireFRAEmployee } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
+const { validateTest, validateId, validatePagination } = require('../middleware/validation');
 
-// Get all tests with optional filtering
-router.get('/', (req, res) => {
+// Get all tests with optional filtering - REQUIRES AUTHENTICATION
+router.get('/', verifyToken, validatePagination, (req, res) => {
   const { client_id, status, tag } = req.query;
 
   let query = `

@@ -3,9 +3,10 @@ const router = express.Router();
 const db = require('../db/database');
 const { verifyToken, requireAdmin } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
+const { validateClient, validateId } = require('../middleware/validation');
 
-// Get all clients
-router.get('/', (req, res) => {
+// Get all clients - REQUIRES AUTHENTICATION
+router.get('/', verifyToken, (req, res) => {
   console.log('[CLIENTS] Getting all clients');
   db.all('SELECT * FROM clients ORDER BY name', (err, rows) => {
     if (err) {
@@ -17,8 +18,8 @@ router.get('/', (req, res) => {
   });
 });
 
-// Get single client with their tests
-router.get('/:id', (req, res) => {
+// Get single client with their tests - REQUIRES AUTHENTICATION
+router.get('/:id', verifyToken, validateId, (req, res) => {
   const { id } = req.params;
 
   db.get('SELECT * FROM clients WHERE id = ?', [id], (err, client) => {

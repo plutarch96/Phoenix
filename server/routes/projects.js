@@ -3,9 +3,10 @@ const router = express.Router();
 const db = require('../db/database');
 const { verifyToken, requireAdmin, requireProjectManager, requireFRAEmployee } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLogger');
+const { validateProject, validateId, validatePagination } = require('../middleware/validation');
 
-// Get all projects (optionally filtered by client)
-router.get('/', (req, res) => {
+// Get all projects (optionally filtered by client) - REQUIRES AUTHENTICATION
+router.get('/', verifyToken, validatePagination, (req, res) => {
   const { client_id, include_tests } = req.query;
   console.log('[PROJECTS] Getting projects, client_id filter:', client_id, 'include_tests:', include_tests);
 
