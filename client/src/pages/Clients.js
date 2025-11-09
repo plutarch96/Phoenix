@@ -203,9 +203,7 @@ function Clients() {
     // Search in client fields
     const matchesClient =
       client.name?.toLowerCase().includes(query) ||
-      client.client_number?.toLowerCase().includes(query) ||
-      client.contact_email?.toLowerCase().includes(query) ||
-      client.contact_phone?.toLowerCase().includes(query);
+      client.client_number?.toLowerCase().includes(query);
 
     if (matchesClient) return true;
 
@@ -272,7 +270,7 @@ function Clients() {
         ) : filteredClients.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {filteredClients.map(client => (
-              <div key={client.id} className="card" style={{ margin: 0 }}>
+              <div key={client.id} className="card" style={{ margin: 0, background: '#f8f9fa' }}>
                 {/* Client Header */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -300,21 +298,6 @@ function Clients() {
                       View Details
                     </Link>
                   </div>
-
-                  {client.contact_email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--text-secondary)', marginLeft: '44px' }}>
-                      <Mail size={16} />
-                      <a href={`mailto:${client.contact_email}`} style={{ color: '#3b82f6' }}>
-                        {client.contact_email}
-                      </a>
-                    </div>
-                  )}
-                  {client.contact_phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', marginLeft: '44px' }}>
-                      <Phone size={16} />
-                      <span>{client.contact_phone}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Expanded Projects Section */}
