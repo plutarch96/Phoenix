@@ -15,7 +15,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isFRAEmployee } = useAuth();
+  const { isFRAEmployee, canManageProjects } = useAuth();
   const toast = useToast();
 
   const [client, setClient] = useState(null);
@@ -149,7 +149,7 @@ function ClientDetail() {
               )}
             </div>
           </div>
-          {isFRAEmployee() && (
+          {canManageProjects() && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => setShowClientModal(true)}>
                 <Edit2 size={16} />
@@ -275,7 +275,7 @@ function ClientDetail() {
                 {!client.contact_email && !client.contact_phone && !client.address && (
                   <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                     <p>No contact information available</p>
-                    {isFRAEmployee() && (
+                    {canManageProjects() && (
                       <button className="btn btn-primary btn-sm" onClick={() => setShowClientModal(true)} style={{ marginTop: '1rem' }}>
                         <Edit2 size={16} />
                         Add Contact Info
@@ -292,7 +292,7 @@ function ClientDetail() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0 }}>Projects ({projects.length})</h3>
-                {isFRAEmployee() && (
+                {canManageProjects() && (
                   <button className="btn btn-primary btn-sm" onClick={() => setShowProjectModal(true)}>
                     <Plus size={16} />
                     Add Project
@@ -330,7 +330,7 @@ function ClientDetail() {
                       )}
 
                       {/* Project actions */}
-                      {isFRAEmployee() && (
+                      {canManageProjects() && (
                         <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                           <button
                             className="btn btn-secondary btn-sm"
@@ -358,7 +358,7 @@ function ClientDetail() {
                 <div className="empty-state">
                   <FolderOpen size={48} style={{ opacity: 0.5 }} />
                   <p>No projects yet</p>
-                  {isFRAEmployee() && (
+                  {canManageProjects() && (
                     <button className="btn btn-primary" onClick={() => setShowProjectModal(true)}>
                       <Plus size={20} />
                       Create First Project
