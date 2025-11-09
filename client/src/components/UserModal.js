@@ -14,6 +14,7 @@ function UserModal({ user, clients, onClose, onSuccess }) {
     is_active: user?.is_active !== undefined ? user.is_active : 1
   });
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,16 +33,13 @@ function UserModal({ user, clients, onClose, onSuccess }) {
 
       if (user) {
         await authAPI.updateUser(user.id, data);
-        toast.success('User updated successfully');
       } else {
         await authAPI.register(data);
-        toast.success('User created successfully! They can now log in with their credentials.');
       }
-      onSuccess();
+      setSuccess(true);
     } catch (error) {
       console.error('Error saving user:', error);
       toast.error(error.response?.data?.error || `Failed to ${user ? 'update' : 'create'} user`);
-    } finally {
       setLoading(false);
     }
   };
@@ -55,16 +53,42 @@ function UserModal({ user, clients, onClose, onSuccess }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Create New User</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <h2 className="modal-title">{user ? 'Edit User' : 'Create New User'}</h2>
+          <button onClick={success ? onSuccess : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {success ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: '#10b981',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 style={{ marginBottom: '0.5rem' }}>Success!</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              User has been {user ? 'updated' : 'created'} successfully.
+              {!user && ' They can now log in with their credentials.'}
+            </p>
+            <button className="btn btn-primary" onClick={onSuccess}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Username *</label>
             <input
@@ -218,10 +242,11 @@ function UserModal({ user, clients, onClose, onSuccess }) {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create User'}
+              {loading ? 'Saving...' : user ? 'Update User' : 'Create User'}
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

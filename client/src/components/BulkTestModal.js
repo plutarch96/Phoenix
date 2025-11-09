@@ -21,6 +21,7 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
 
   const [tests, setTests] = useState([{ ...defaultTest, id: Date.now() }]);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [projects, setProjects] = useState([]);
   const [nextTestNumber, setNextTestNumber] = useState(null);
 
@@ -119,26 +120,50 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
         await testsAPI.create(data);
       }
 
-      onSuccess();
+      setSuccess(true);
     } catch (error) {
       console.error('Error creating tests:', error);
       alert('Failed to create tests: ' + (error.response?.data?.error || error.message));
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-header">
           <h2 className="modal-title">Create Multiple Tests</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button onClick={success ? onSuccess : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {success ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: '#10b981',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 style={{ marginBottom: '0.5rem' }}>Success!</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              {tests.length} test{tests.length > 1 ? 's' : ''} created successfully.
+            </p>
+            <button className="btn btn-primary" onClick={onSuccess}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           {/* Global Client & Project Selection */}
           <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Project Selection (applies to all tests)</h3>
@@ -202,7 +227,10 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
-                      onClick={() => duplicateTest(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateTest(index);
+                      }}
                       title="Duplicate this test"
                     >
                       <Copy size={14} />
@@ -211,7 +239,10 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
                       <button
                         type="button"
                         className="btn btn-danger btn-sm"
-                        onClick={() => removeTest(index)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeTest(index);
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -360,6 +391,7 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

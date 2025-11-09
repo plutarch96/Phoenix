@@ -14,6 +14,7 @@ function ClientModal({ client, onClose, onSuccess }) {
     zip_code: client?.zip_code || ''
   });
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const formatClientNumber = (value) => {
     // Remove any non-digit characters
@@ -48,12 +49,11 @@ function ClientModal({ client, onClose, onSuccess }) {
         console.log('Client created:', response.data);
       }
 
-      onSuccess();
+      setSuccess(true);
     } catch (error) {
       console.error('Error saving client:', error);
       console.error('Error details:', error.response?.data);
       alert('Failed to save client: ' + (error.response?.data?.error || error.message));
-    } finally {
       setLoading(false);
     }
   };
@@ -77,16 +77,41 @@ function ClientModal({ client, onClose, onSuccess }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">{client ? 'Edit Client' : 'Add New Client'}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+          <button onClick={success ? onSuccess : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {success ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              background: '#10b981',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 style={{ marginBottom: '0.5rem' }}>Success!</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              Client has been {client ? 'updated' : 'created'} successfully.
+            </p>
+            <button className="btn btn-primary" onClick={onSuccess}>
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Client Name *</label>
             <input
@@ -203,6 +228,7 @@ function ClientModal({ client, onClose, onSuccess }) {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
