@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, Lock, User } from 'lucide-react';
+import { Flame, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -58,10 +59,10 @@ function Login() {
             <Flame size={40} color="white" />
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>
-            Fire & Risk Alliance
+            Fire Research Lab
           </h1>
           <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-            Laboratory Management System
+            Management System
           </p>
         </div>
 
@@ -116,14 +117,34 @@ function Login() {
                 color: '#64748b'
               }} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 className="form-input"
-                style={{ paddingLeft: '40px' }}
+                style={{ paddingLeft: '40px', paddingRight: '40px' }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -136,23 +157,6 @@ function Login() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        {/* Default Credentials Info */}
-        <div style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          background: '#f1f5f9',
-          borderRadius: '8px',
-          fontSize: '0.75rem',
-          color: '#475569'
-        }}>
-          <strong>Default Login:</strong>
-          <div>Username: admin</div>
-          <div>Password: changeme123</div>
-          <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 600 }}>
-            ⚠️ Change the password after first login!
-          </div>
-        </div>
       </div>
     </div>
   );

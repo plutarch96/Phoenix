@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
   }
 
   db.get(
-    'SELECT * FROM users WHERE username = ? AND is_active = 1',
+    'SELECT * FROM users WHERE LOWER(username) = LOWER(?) AND is_active = 1',
     [username],
     async (err, user) => {
       if (err) {
