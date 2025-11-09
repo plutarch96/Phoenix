@@ -9,8 +9,9 @@ console.log('Starting updated_at column migration...');
 db.serialize(() => {
   // Check and add updated_at column to calibrations table only
   // (tests and projects already have updated_at in their schema)
+  // Note: SQLite doesn't allow DEFAULT CURRENT_TIMESTAMP in ALTER TABLE, so we add without default
   db.run(`
-    ALTER TABLE calibrations ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ALTER TABLE calibrations ADD COLUMN updated_at DATETIME
   `, (err) => {
     if (err) {
       if (err.message.includes('duplicate column name')) {
@@ -21,9 +22,9 @@ db.serialize(() => {
     } else {
       console.log('✓ Added updated_at column to calibrations table');
 
-      // Initialize existing rows with created_at value
+      // Initialize existing rows with created_at value, new rows will use trigger
       db.run(`
-        UPDATE calibrations SET updated_at = created_at WHERE updated_at IS NULL
+        UPDATE calibrations SET updated_at = COALESCE(created_at, CURRENT_TIMESTAMP)
       `, (err) => {
         if (err) {
           console.error('Error initializing calibrations.updated_at:', err.message);
@@ -66,7 +67,7 @@ db.serialize(() => {
     }
   });
 
-  // Create trigger for calibrations table
+  // Create trigger for calibrations table (on UPDATE)
   db.run(`
     CREATE TRIGGER IF NOT EXISTS update_calibrations_timestamp
     BEFORE UPDATE ON calibrations
@@ -76,9 +77,25 @@ db.serialize(() => {
     END;
   `, (err) => {
     if (err) {
-      console.error('Error creating calibrations trigger:', err.message);
+      console.error('Error creating calibrations UPDATE trigger:', err.message);
     } else {
-      console.log('✓ Created trigger for calibrations table');
+      console.log('✓ Created UPDATE trigger for calibrations table');
+    }
+  });
+
+  // Create trigger for calibrations table (on INSERT) to set initial updated_at
+  db.run(`
+    CREATE TRIGGER IF NOT EXISTS insert_calibrations_timestamp
+    AFTER INSERT ON calibrations
+    FOR EACH ROW
+    BEGIN
+      UPDATE calibrations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;
+  `, (err) => {
+    if (err) {
+      console.error('Error creating calibrations INSERT trigger:', err.message);
+    } else {
+      console.log('✓ Created INSERT trigger for calibrations table');
     }
   });
 });
