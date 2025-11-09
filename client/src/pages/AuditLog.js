@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Filter, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Activity, Filter, User, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { auditAPI } from '../services/auditAPI';
+
+// Helper to get date 7 days ago in datetime-local format
+const getSevenDaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 7);
+  date.setHours(0, 0, 0, 0);
+  return date.toISOString().slice(0, 16);
+};
+
+// Helper to get current date in datetime-local format
+const getCurrentDate = () => {
+  const date = new Date();
+  return date.toISOString().slice(0, 16);
+};
 
 function AuditLog() {
   const [logs, setLogs] = useState([]);
@@ -9,8 +23,8 @@ function AuditLog() {
   const [filters, setFilters] = useState({
     action: '',
     entity_type: '',
-    start_date: '',
-    end_date: '',
+    start_date: getSevenDaysAgo(),
+    end_date: getCurrentDate(),
     page: 1,
     limit: 50
   });
@@ -44,11 +58,70 @@ function AuditLog() {
     setFilters({
       action: '',
       entity_type: '',
-      start_date: '',
-      end_date: '',
+      start_date: getSevenDaysAgo(),
+      end_date: getCurrentDate(),
       page: 1,
       limit: 50
     });
+  };
+
+  const exportLogs = () => {
+    if (logs.length === 0) {
+      alert('No logs to export');
+      return;
+    }
+
+    // Create a formatted text file
+    let content = 'AUDIT LOG EXPORT\n';
+    content += '='.repeat(80) + '\n\n';
+
+    // Add filter information
+    content += 'Filter Criteria:\n';
+    content += '-'.repeat(80) + '\n';
+    if (filters.action) content += `Action: ${filters.action}\n`;
+    if (filters.entity_type) content += `Entity Type: ${filters.entity_type}\n`;
+    if (filters.start_date) content += `Start Date: ${new Date(filters.start_date).toLocaleString()}\n`;
+    if (filters.end_date) content += `End Date: ${new Date(filters.end_date).toLocaleString()}\n`;
+    content += `Total Records: ${pagination.total || logs.length}\n`;
+    content += `Showing Page: ${pagination.page || 1} of ${pagination.totalPages || 1}\n`;
+    content += '\n';
+
+    // Add logs
+    content += 'Audit Log Entries:\n';
+    content += '='.repeat(80) + '\n\n';
+
+    logs.forEach((log, index) => {
+      content += `Entry ${index + 1}:\n`;
+      content += '-'.repeat(80) + '\n';
+      content += `Timestamp:    ${formatDate(log.timestamp)}\n`;
+      content += `User:         ${log.username || 'Unknown'} (ID: ${log.user_id || 'N/A'})\n`;
+      content += `Action:       ${log.action}\n`;
+      content += `Entity Type:  ${log.entity_type || 'N/A'}\n`;
+      content += `Entity ID:    ${log.entity_id || 'N/A'}\n`;
+      content += `Details:      ${log.details || 'N/A'}\n`;
+      content += `IP Address:   ${log.ip_address || 'N/A'}\n`;
+      content += '\n';
+    });
+
+    content += '='.repeat(80) + '\n';
+    content += `Export Generated: ${new Date().toLocaleString()}\n`;
+    content += '='.repeat(80) + '\n';
+
+    // Create and download the file
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+
+    // Generate filename with date range
+    const startDate = filters.start_date ? new Date(filters.start_date).toISOString().split('T')[0] : 'all';
+    const endDate = filters.end_date ? new Date(filters.end_date).toISOString().split('T')[0] : 'all';
+    link.download = `audit-log-${startDate}-to-${endDate}.txt`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const formatDate = (dateString) => {
@@ -62,6 +135,13 @@ function AuditLog() {
       CREATE: 'badge-success',
       UPDATE: 'badge-info',
       DELETE: 'badge-danger',
+      UPLOAD: 'badge-success',
+      CLAIM: 'badge-warning',
+      UNCLAIM: 'badge-secondary',
+      JOIN: 'badge-success',
+      LEAVE: 'badge-secondary',
+      TAG: 'badge-info',
+      UNTAG: 'badge-secondary',
       LOGIN: 'badge-success',
       LOGOUT: 'badge-info',
       VIEW: 'badge-info'
@@ -74,7 +154,18 @@ function AuditLog() {
       <div className="page-header">
         <div>
           <h2>Audit Log</h2>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            Showing activity from the last 7 days by default
+          </p>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={exportLogs}
+          disabled={loading || logs.length === 0}
+        >
+          <Download size={20} />
+          Export to Text
+        </button>
       </div>
 
       {/* Filters */}
@@ -99,8 +190,14 @@ function AuditLog() {
               <option value="CREATE">Create</option>
               <option value="UPDATE">Update</option>
               <option value="DELETE">Delete</option>
+              <option value="UPLOAD">Upload</option>
+              <option value="CLAIM">Claim</option>
+              <option value="UNCLAIM">Unclaim</option>
+              <option value="JOIN">Join</option>
+              <option value="LEAVE">Leave</option>
+              <option value="TAG">Tag</option>
+              <option value="UNTAG">Untag</option>
               <option value="LOGIN">Login</option>
-              <option value="LOGOUT">Logout</option>
               <option value="VIEW">View</option>
             </select>
           </div>
@@ -112,12 +209,13 @@ function AuditLog() {
               onChange={(e) => handleFilterChange('entity_type', e.target.value)}
             >
               <option value="">All Entity Types</option>
-              <option value="test">Test</option>
-              <option value="calibration">Calibration</option>
+              <option value="user">User</option>
               <option value="client">Client</option>
               <option value="project">Project</option>
-              <option value="user">User</option>
-              <option value="media">Media</option>
+              <option value="test">Test</option>
+              <option value="calibration">Calibration</option>
+              <option value="media">Media/Files</option>
+              <option value="report">Report</option>
             </select>
           </div>
           <div className="form-group">
