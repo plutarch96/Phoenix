@@ -19,11 +19,12 @@ import {
   Users,
   Briefcase
 } from 'lucide-react';
-import { projectsAPI, clientsAPI, testsAPI } from '../services/api';
+import { projectsAPI, clientsAPI, testsAPI, projectMediaAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
 import BulkTestModal from '../components/BulkTestModal';
+import ProjectMediaUpload from '../components/ProjectMediaUpload';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -44,11 +45,14 @@ function ProjectDetail() {
   const [isClaimed, setIsClaimed] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [testMembers, setTestMembers] = useState({});
+  const [projectMedia, setProjectMedia] = useState([]);
+  const [showMediaUpload, setShowMediaUpload] = useState(false);
 
   useEffect(() => {
     loadProject();
     checkIfTagged();
     loadMembers();
+    loadProjectMedia();
   }, [id]);
 
   useEffect(() => {
@@ -80,9 +84,60 @@ function ProjectDetail() {
     }
   };
 
+  const loadProjectMedia = async () => {
+    try {
+      const res = await projectMediaAPI.getByProject(id);
+      setProjectMedia(res.data);
+    } catch (error) {
+      console.error('Error loading project media:', error);
+    }
+  };
+
   const handleProjectUpdated = () => {
     setShowProjectModal(false);
     loadProject();
+  };
+
+  const handleMediaUploaded = () => {
+    setShowMediaUpload(false);
+    loadProjectMedia();
+    toast.success('Documents uploaded successfully');
+  };
+
+  const handleDeleteMedia = (mediaId) => {
+    setConfirmDialog({
+      title: 'Delete Document',
+      message: 'Are you sure you want to delete this document? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await projectMediaAPI.delete(mediaId);
+          loadProjectMedia();
+          toast.success('Document deleted successfully');
+        } catch (error) {
+          console.error('Error deleting media:', error);
+          toast.error('Failed to delete document');
+        }
+        setConfirmDialog(null);
+      },
+      onCancel: () => setConfirmDialog(null)
+    });
+  };
+
+  const handleDownloadAll = async () => {
+    try {
+      const response = await projectMediaAPI.downloadAll(id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `project-${id}-documents.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading documents:', error);
+      toast.error('Failed to download documents');
+    }
   };
 
   const handleBulkTestsCreated = () => {
@@ -512,22 +567,76 @@ function ProjectDetail() {
         <div className="card-header">
           <h3 className="card-title">
             <FileText size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Project Documents
+            Project Documents ({projectMedia.length})
           </h3>
           {isFRAEmployee() && (
-            <button className="btn btn-primary btn-sm">
-              <Upload size={16} />
-              Upload Document
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {projectMedia.length > 0 && (
+                <button className="btn btn-secondary btn-sm" onClick={handleDownloadAll}>
+                  <Download size={16} />
+                  Download All
+                </button>
+              )}
+              <button className="btn btn-primary btn-sm" onClick={() => setShowMediaUpload(true)}>
+                <Upload size={16} />
+                Upload Document
+              </button>
+            </div>
           )}
         </div>
-        <div className="empty-state">
-          <FileText size={48} style={{ opacity: 0.5 }} />
-          <p>Project-level document management coming soon</p>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-            Upload proposals, test plans, client documents, and other project-related files
-          </p>
-        </div>
+        {projectMedia.length > 0 ? (
+          <div>
+            {projectMedia.map(media => (
+              <div key={media.id} className="card" style={{ marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <FileText size={24} color="#64748b" />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{media.file_name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        {media.file_size ? `${(media.file_size / 1024).toFixed(2)} KB` : ''} •
+                        Uploaded {new Date(media.uploaded_at).toLocaleDateString()}
+                      </div>
+                      {media.description && (
+                        <div style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
+                          {media.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <a
+                      href={`/api/project-media/download/${media.id}`}
+                      className="btn btn-primary btn-sm"
+                      download
+                    >
+                      <Download size={16} />
+                      Download
+                    </a>
+                    {isFRAEmployee() && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteMedia(media.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <FileText size={48} style={{ opacity: 0.5 }} />
+            <p>No project documents uploaded yet</p>
+            {isFRAEmployee() && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Upload proposals, test plans, client documents, and other project-related files
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* EDIT/DELETE ACTIONS */}
@@ -576,6 +685,14 @@ function ProjectDetail() {
           lockClient={true}
           onClose={() => setShowBulkTestModal(false)}
           onSuccess={handleBulkTestsCreated}
+        />
+      )}
+
+      {showMediaUpload && (
+        <ProjectMediaUpload
+          projectId={id}
+          onClose={() => setShowMediaUpload(false)}
+          onSuccess={handleMediaUploaded}
         />
       )}
 

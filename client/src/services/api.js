@@ -134,6 +134,17 @@ export const mediaAPI = {
   delete: (id) => api.delete(`/media/${id}`),
 };
 
+// Project Media API
+export const projectMediaAPI = {
+  getByProject: (projectId) => api.get(`/project-media/project/${projectId}`),
+  upload: (projectId, formData) => api.post(`/project-media/project/${projectId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  delete: (id) => api.delete(`/project-media/${id}`),
+  download: (id) => api.get(`/project-media/download/${id}`, { responseType: 'blob' }),
+  downloadAll: (projectId) => api.get(`/project-media/project/${projectId}/download-all`, { responseType: 'blob' }),
+};
+
 // Analytics API
 export const analyticsAPI = {
   getDashboard: () => api.get('/analytics/dashboard'),
