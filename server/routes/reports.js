@@ -4,7 +4,7 @@ const db = require('../db/database');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireStaffOrAbove } = require('../middleware/auth');
 
 // Configure multer for report uploads
 const storage = multer.diskStorage({
