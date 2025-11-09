@@ -32,6 +32,9 @@ import SearchResults from './pages/SearchResults';
 import GlobalSearch from './components/GlobalSearch';
 import ThemeToggle from './components/ThemeToggle';
 import Toast from './components/Toast';
+import ErrorBoundary from './components/ErrorBoundary';
+import OfflineIndicator from './components/OfflineIndicator';
+import { LoadingSpinner } from './components/LoadingSkeleton';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -45,7 +48,7 @@ function PrivateRoute({ children }) {
         justifyContent: 'center',
         height: '100vh'
       }}>
-        <div className="loading">Loading...</div>
+        <LoadingSpinner size="large" message="Loading application..." />
       </div>
     );
   }
@@ -201,22 +204,25 @@ function MainApp() {
 
 function App() {
   return (
-    <Router>
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/*" element={
-                <PrivateRoute>
-                  <MainApp />
-                </PrivateRoute>
-              } />
-            </Routes>
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <OfflineIndicator />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/*" element={
+                  <PrivateRoute>
+                    <MainApp />
+                  </PrivateRoute>
+                } />
+              </Routes>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
