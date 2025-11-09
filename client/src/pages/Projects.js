@@ -255,7 +255,7 @@ function Projects() {
               const projectCount = clientProjects.length;
 
               return (
-              <div key={client.id} className="card" style={{ margin: 0, background: '#d1d5db' }}>
+              <div key={client.id} className="card" style={{ margin: 0, background: '#f5f5f5' }}>
                 {/* Client Header */}
                 <div>
                   <div
