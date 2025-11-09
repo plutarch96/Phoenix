@@ -227,7 +227,10 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
-                      onClick={() => duplicateTest(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateTest(index);
+                      }}
                       title="Duplicate this test"
                     >
                       <Copy size={14} />
@@ -236,7 +239,10 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
                       <button
                         type="button"
                         className="btn btn-danger btn-sm"
-                        onClick={() => removeTest(index)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeTest(index);
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
