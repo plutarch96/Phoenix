@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Copy } from 'lucide-react';
 import { testsAPI, projectsAPI } from '../services/api';
 
-function BulkTestModal({ clients, project, onClose, onSuccess }) {
+function BulkTestModal({ clients, project, lockClient = false, onClose, onSuccess }) {
   const presetLocations = ['Rockville', 'York', 'Cambridge'];
 
   const defaultTest = {
@@ -142,21 +142,30 @@ function BulkTestModal({ clients, project, onClose, onSuccess }) {
           {/* Global Client & Project Selection */}
           <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Project Selection (applies to all tests)</h3>
-            <div className="grid grid-2">
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Client *</label>
-                <select
-                  className="form-select"
-                  value={tests[0]?.client_id || ''}
-                  onChange={(e) => handleClientChange(e.target.value)}
-                  required
-                >
-                  <option value="">Select a client</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name}</option>
-                  ))}
-                </select>
-              </div>
+            <div className={lockClient ? '' : 'grid grid-2'}>
+              {lockClient ? (
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="form-label">Client</label>
+                  <div style={{ padding: '0.5rem', background: 'var(--bg-secondary)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                    {clients.find(c => c.id == tests[0]?.client_id)?.name || 'Unknown Client'}
+                  </div>
+                </div>
+              ) : (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Client *</label>
+                  <select
+                    className="form-select"
+                    value={tests[0]?.client_id || ''}
+                    onChange={(e) => handleClientChange(e.target.value)}
+                    required
+                  >
+                    <option value="">Select a client</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Project *</label>

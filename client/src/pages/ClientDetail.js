@@ -22,7 +22,7 @@ function ClientDetail() {
   const [projects, setProjects] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('projects');
   const [showClientModal, setShowClientModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -192,10 +192,10 @@ function ClientDetail() {
           overflowX: 'auto'
         }}>
           {[
-            { id: 'overview', label: 'Overview', icon: Users },
             { id: 'projects', label: 'Projects', icon: FolderOpen },
-            { id: 'activity', label: 'Recent Activity', icon: ActivityIcon },
-            { id: 'documents', label: 'Documents', icon: File }
+            { id: 'documents', label: 'Documents', icon: File },
+            { id: 'overview', label: 'Contact', icon: Users },
+            { id: 'activity', label: 'Recent Activity', icon: ActivityIcon }
           ].map(tab => (
             <button
               key={tab.id}
