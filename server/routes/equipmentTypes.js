@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { verifyToken } = require('../middleware/auth');
+const { requireStaffOrAbove, requireAdmin } = require('../middleware/roleChecks');
 
 // Get all equipment types
-router.get('/', (req, res) => {
+router.get('/', verifyToken, (req, res) => {
   db.all(
     'SELECT * FROM equipment_types ORDER BY type_name',
     (err, rows) => {
@@ -16,7 +18,7 @@ router.get('/', (req, res) => {
 });
 
 // Generate next equipment ID for a type
-router.post('/generate-id', (req, res) => {
+router.post('/generate-id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { equipment_type } = req.body;
 
   if (!equipment_type) {
@@ -54,7 +56,7 @@ router.post('/generate-id', (req, res) => {
 });
 
 // Add new equipment type
-router.post('/', (req, res) => {
+router.post('/', verifyToken, requireAdmin, (req, res) => {
   const { type_code, type_name } = req.body;
 
   if (!type_code || !type_name) {

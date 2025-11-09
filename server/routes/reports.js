@@ -37,7 +37,7 @@ const upload = multer({
 });
 
 // Get all reports for a test
-router.get('/test/:test_id', (req, res) => {
+router.get('/test/:test_id', verifyToken, (req, res) => {
   const { test_id } = req.params;
 
   db.all(
@@ -57,7 +57,7 @@ router.get('/test/:test_id', (req, res) => {
 });
 
 // Upload report
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', verifyToken, requireStaffOrAbove, upload.single('file'), (req, res) => {
   const { test_id, report_type, uploaded_by, notes } = req.body;
 
   console.log('[REPORTS] Upload request:', { test_id, report_type, uploaded_by });
@@ -103,7 +103,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Download report
-router.get('/download/:id', (req, res) => {
+router.get('/download/:id', verifyToken, (req, res) => {
   const { id } = req.params;
 
   db.get(
@@ -134,7 +134,7 @@ router.get('/download/:id', (req, res) => {
 });
 
 // Update report type or notes
-router.put('/:id', (req, res) => {
+router.put('/:id', verifyToken, requireStaffOrAbove, (req, res) => {
   const { id } = req.params;
   const { report_type, notes } = req.body;
 
@@ -173,7 +173,7 @@ router.put('/:id', (req, res) => {
 });
 
 // Delete report
-router.delete('/:id', (req, res) => {
+router.delete('/:id', verifyToken, requireProjectManager, (req, res) => {
   const { id } = req.params;
 
   // Get the file path first to delete the file

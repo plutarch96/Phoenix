@@ -394,7 +394,7 @@ router.get('/:id/download-calibration-sheets', verifyToken, (req, res) => {
 });
 
 // Tag test as "mine" for current user
-router.post('/:id/tag', (req, res) => {
+router.post('/:id/tag', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -418,7 +418,7 @@ router.post('/:id/tag', (req, res) => {
 });
 
 // Untag test for current user
-router.delete('/:id/tag', (req, res) => {
+router.delete('/:id/tag', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -439,7 +439,7 @@ router.delete('/:id/tag', (req, res) => {
 });
 
 // Get tests tagged by user (My Tests)
-router.get('/user/:user_id/tagged', (req, res) => {
+router.get('/user/:user_id/tagged', verifyToken, (req, res) => {
   const { user_id } = req.params;
 
   const query = `
@@ -493,7 +493,7 @@ router.get('/user/:user_id/tagged', (req, res) => {
 });
 
 // Join test (add user to test_members)
-router.post('/:id/join', (req, res) => {
+router.post('/:id/join', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -517,7 +517,7 @@ router.post('/:id/join', (req, res) => {
 });
 
 // Leave test (remove user from test_members)
-router.delete('/:id/join', (req, res) => {
+router.delete('/:id/join', verifyToken, (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
 
@@ -541,7 +541,7 @@ router.delete('/:id/join', (req, res) => {
 });
 
 // Get tests joined by a specific user
-router.get('/user/:user_id/joined', (req, res) => {
+router.get('/user/:user_id/joined', verifyToken, (req, res) => {
   const { user_id } = req.params;
 
   const query = `
@@ -564,7 +564,7 @@ router.get('/user/:user_id/joined', (req, res) => {
 });
 
 // Get members of a specific test
-router.get('/:id/members', (req, res) => {
+router.get('/:id/members', verifyToken, (req, res) => {
   const { id } = req.params;
 
   const query = `
