@@ -35,12 +35,13 @@ router.get('/', verifyToken, requireAdmin, (req, res) => {
   }
 
   if (start_date) {
-    conditions.push('timestamp >= ?');
+    conditions.push('datetime(timestamp) >= datetime(?)');
     params.push(start_date);
   }
 
   if (end_date) {
-    conditions.push('timestamp <= ?');
+    // Add a day to end_date and use < instead of <= to include all of end_date
+    conditions.push('datetime(timestamp) < datetime(?, \'+1 day\')');
     params.push(end_date);
   }
 

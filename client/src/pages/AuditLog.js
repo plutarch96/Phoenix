@@ -10,9 +10,10 @@ const getSevenDaysAgo = () => {
   return date.toISOString().slice(0, 16);
 };
 
-// Helper to get current date in datetime-local format
+// Helper to get end of current day in datetime-local format
 const getCurrentDate = () => {
   const date = new Date();
+  date.setHours(23, 59, 59, 999);
   return date.toISOString().slice(0, 16);
 };
 
