@@ -5,6 +5,7 @@ import { projectsAPI, clientsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import ProjectModal from '../components/ProjectModal';
+import ClientModal from '../components/ClientModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { exportProjects } from '../utils/exportUtils';
 
@@ -16,6 +17,7 @@ function Projects() {
   const [expandedClients, setExpandedClients] = useState({});
   const [loading, setLoading] = useState(true);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +106,11 @@ function Projects() {
     setShowProjectModal(false);
     setSelectedProject(null);
     setSelectedClient(null);
+    loadClientsAndProjects();
+  };
+
+  const handleClientSaved = () => {
+    setShowClientModal(false);
     loadClientsAndProjects();
   };
 
@@ -215,10 +222,16 @@ function Projects() {
             Export
           </button>
           {isFRAEmployee() && (
-            <button className="btn btn-primary" onClick={() => openNewProjectModal()}>
-              <Plus size={20} />
-              Add Project
-            </button>
+            <>
+              <button className="btn btn-primary" onClick={() => setShowClientModal(true)}>
+                <Plus size={20} />
+                Add Client
+              </button>
+              <button className="btn btn-primary" onClick={() => openNewProjectModal()}>
+                <Plus size={20} />
+                Add Project
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -447,6 +460,13 @@ function Projects() {
           </div>
         )}
       </div>
+
+      {showClientModal && (
+        <ClientModal
+          onClose={() => setShowClientModal(false)}
+          onSuccess={handleClientSaved}
+        />
+      )}
 
       {showProjectModal && (
         <ProjectModal

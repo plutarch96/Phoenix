@@ -64,7 +64,6 @@ function Navigation() {
   const baseNavItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/projects', icon: FolderOpen, label: 'Projects' },
-    { path: '/clients', icon: Users, label: 'Clients' },
     { path: '/calibrations', icon: Settings, label: 'Calibrations' },
   ];
 
