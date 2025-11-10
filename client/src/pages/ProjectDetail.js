@@ -591,8 +591,26 @@ function ProjectDetail() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <FileText size={24} color="#64748b" />
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{media.file_name}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 500 }}>{media.file_name}</span>
+                        {media.document_category && (
+                          <span className={`badge ${
+                            media.document_category === 'client_documents' ? 'badge-success' :
+                            media.document_category === 'test_plan' ? 'badge-primary' :
+                            media.document_category === 'purchase_order' ? 'badge-warning' :
+                            media.document_category === 'proposal' ? 'badge-secondary' :
+                            'badge-secondary'
+                          }`}>
+                            {media.document_category === 'client_documents' ? 'Client Document' :
+                             media.document_category === 'test_plan' ? 'Test Plan' :
+                             media.document_category === 'purchase_order' ? 'Purchase Order' :
+                             media.document_category === 'proposal' ? 'Proposal' :
+                             media.document_category === 'nda' ? 'NDA' :
+                             media.document_category}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
                         {media.file_size ? `${(media.file_size / 1024).toFixed(2)} KB` : ''} •
                         Uploaded {new Date(media.uploaded_at).toLocaleDateString()}

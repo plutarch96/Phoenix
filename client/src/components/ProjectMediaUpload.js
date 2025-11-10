@@ -7,6 +7,7 @@ function ProjectMediaUpload({ projectId, onClose, onSuccess }) {
   const toast = useToast();
   const [files, setFiles] = useState([]);
   const [description, setDescription] = useState('');
+  const [documentCategory, setDocumentCategory] = useState('client_documents');
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
@@ -58,6 +59,7 @@ function ProjectMediaUpload({ projectId, onClose, onSuccess }) {
 
       formData.append('category', 'document');
       formData.append('description', description);
+      formData.append('document_category', documentCategory);
 
       await projectMediaAPI.upload(projectId, formData);
 
@@ -135,6 +137,25 @@ function ProjectMediaUpload({ projectId, onClose, onSuccess }) {
                 </div>
               </div>
             )}
+
+            <div className="form-group">
+              <label className="form-label">Document Category</label>
+              <select
+                className="form-select"
+                value={documentCategory}
+                onChange={(e) => setDocumentCategory(e.target.value)}
+                required
+              >
+                <option value="client_documents">Client Documents (visible to clients)</option>
+                <option value="test_plan">Test Plan</option>
+                <option value="purchase_order">Purchase Order</option>
+                <option value="proposal">Proposal</option>
+                <option value="nda">NDA</option>
+              </select>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Only "Client Documents" are visible to client users. Other categories are internal only.
+              </p>
+            </div>
 
             <div className="form-group">
               <label className="form-label">Description (Optional)</label>

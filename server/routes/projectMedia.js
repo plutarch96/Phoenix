@@ -33,27 +33,42 @@ const upload = multer({
 // Get all media for a project
 router.get('/project/:project_id', verifyToken, (req, res) => {
   const { project_id } = req.params;
+  const userRole = req.user.role;
 
-  db.all(
-    'SELECT * FROM project_media WHERE project_id = ? ORDER BY uploaded_at DESC',
-    [project_id],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json(rows);
+  // Client users can only see documents with document_category = 'client_documents'
+  // FRA employees can see all documents
+  let query = 'SELECT * FROM project_media WHERE project_id = ?';
+  let params = [project_id];
+
+  if (userRole === 'client') {
+    query += ' AND document_category = ?';
+    params.push('client_documents');
+  }
+
+  query += ' ORDER BY uploaded_at DESC';
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-  );
+    res.json(rows);
+  });
 });
 
 // Upload media to a project
 router.post('/project/:project_id', verifyToken, requireFRAEmployee, upload.array('files', 20), (req, res) => {
   const { project_id } = req.params;
-  const { category = 'document', description = '' } = req.body;
+  const { category = 'document', description = '', document_category = 'client_documents' } = req.body;
   const files = req.files;
 
   if (!files || files.length === 0) {
     return res.status(400).json({ error: 'No files provided' });
+  }
+
+  // Validate document_category
+  const allowedDocumentCategories = ['test_plan', 'purchase_order', 'proposal', 'nda', 'client_documents'];
+  if (!allowedDocumentCategories.includes(document_category)) {
+    return res.status(400).json({ error: 'Invalid document category' });
   }
 
   const insertPromises = files.map(file => {
@@ -73,9 +88,9 @@ router.post('/project/:project_id', verifyToken, requireFRAEmployee, upload.arra
       const filePath = `/uploads/projects/${file.filename}`;
 
       db.run(
-        `INSERT INTO project_media (project_id, media_type, media_category, file_name, file_path, file_size, uploaded_by, description)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, mediaType, category, file.originalname, filePath, file.size, req.user.id, description],
+        `INSERT INTO project_media (project_id, media_type, media_category, file_name, file_path, file_size, uploaded_by, description, document_category)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, mediaType, category, file.originalname, filePath, file.size, req.user.id, description, document_category],
         function(err) {
           if (err) {
             reject(err);
