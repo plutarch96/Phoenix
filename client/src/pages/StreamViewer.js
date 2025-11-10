@@ -12,7 +12,8 @@ function StreamViewer() {
 
   useEffect(() => {
     // Connect to Socket.IO server
-    socketRef.current = io('http://localhost:5000');
+    const socketUrl = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL.replace('/api', '') : window.location.origin;
+    socketRef.current = io(socketUrl);
 
     socketRef.current.on('connect', () => {
       console.log('Connected to server');

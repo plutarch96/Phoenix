@@ -509,7 +509,7 @@ function ProjectCard({ project, onClick }) {
 
 function MediaCard({ media, onClick }) {
   const isVideo = media.media_type === 'video';
-  const fileUrl = `http://localhost:5000${media.file_path}`;
+  const fileUrl = media.file_path;
 
   return (
     <div className="card card-hover" onClick={onClick} style={{ cursor: 'pointer', padding: 0, overflow: 'hidden' }}>

@@ -183,7 +183,7 @@ function TestDetail() {
   };
 
   const renderMediaFile = (media, showPreview = true) => {
-    const fileUrl = `http://localhost:5000${media.file_path}`;
+    const fileUrl = media.file_path;
 
     if (showPreview && media.media_type === 'image') {
       return (
@@ -965,7 +965,7 @@ function TestDetail() {
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           {cal.pdf_path && (
                             <a
-                              href={`http://localhost:5000${cal.pdf_path}`}
+                              href={cal.pdf_path}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn btn-primary btn-sm"

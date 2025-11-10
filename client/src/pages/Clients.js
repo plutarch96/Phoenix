@@ -62,11 +62,15 @@ function Clients() {
     try {
       console.log(`Loading projects for client ${clientId}...`);
       const res = await projectsAPI.getAll({ client_id: clientId, include_tests: true });
-      console.log(`Loaded ${res.data.length} projects for client ${clientId}:`, res.data);
+
+      // Handle paginated response format
+      const projectsData = res.data.data || res.data;
+
+      console.log(`Loaded ${projectsData.length} projects for client ${clientId}:`, projectsData);
       setProjects(prev => {
         const updated = {
           ...prev,
-          [clientId]: res.data
+          [clientId]: projectsData
         };
         console.log('Updated projects state:', updated);
         return updated;
@@ -117,9 +121,13 @@ function Clients() {
           await projectsAPI.delete(projectId);
           // Refresh projects for this client
           const res = await projectsAPI.getAll({ client_id: clientId });
+
+          // Handle paginated response format
+          const projectsData = res.data.data || res.data;
+
           setProjects(prev => ({
             ...prev,
-            [clientId]: res.data
+            [clientId]: projectsData
           }));
         } catch (error) {
           console.error('Error deleting project:', error);

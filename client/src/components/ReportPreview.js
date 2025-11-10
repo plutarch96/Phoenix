@@ -3,7 +3,7 @@ import { X, Download, ExternalLink, FileText } from 'lucide-react';
 
 function ReportPreview({ report, onClose, onDownload }) {
   const isPDF = report.file_name.toLowerCase().endsWith('.pdf');
-  const fileUrl = `http://localhost:5000${report.file_path}`;
+  const fileUrl = report.file_path;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
