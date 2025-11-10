@@ -141,7 +141,11 @@ function MediaUpload({ testId, category = 'media', mediaType = null, onClose, on
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2 className="modal-title">{info.title}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>

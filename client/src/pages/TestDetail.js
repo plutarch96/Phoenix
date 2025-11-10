@@ -1128,7 +1128,12 @@ function TestDetail() {
       {/* Report Upload Modal */}
       {showReportUpload && (
         <div className="modal-overlay" onClick={() => setShowReportUpload(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px' }}
+          >
             <div className="modal-header">
               <h2>Upload Report</h2>
               <button className="close-button" onClick={() => setShowReportUpload(false)}>

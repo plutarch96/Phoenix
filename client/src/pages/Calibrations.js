@@ -448,7 +448,12 @@ function Calibrations() {
 
       {showBulkImport && (
         <div className="modal-overlay" onClick={() => setShowBulkImport(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            style={{ maxWidth: '600px' }}
+          >
             <div className="modal-header">
               <h2 className="modal-title">Bulk Import Calibrations</h2>
               <button onClick={() => setShowBulkImport(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
