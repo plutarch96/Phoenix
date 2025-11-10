@@ -122,6 +122,7 @@ function ProjectModal({ project, client, clients = [], onClose, onSuccess }) {
               className="form-select"
               value={formData.client_id}
               onChange={handleChange}
+              disabled={!!project}
               required
             >
               <option value="">Select a client...</option>
@@ -131,6 +132,11 @@ function ProjectModal({ project, client, clients = [], onClose, onSuccess }) {
                 </option>
               ))}
             </select>
+            {project && (
+              <small style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                Client cannot be changed when editing a project
+              </small>
+            )}
           </div>
 
           <div className="form-group">
