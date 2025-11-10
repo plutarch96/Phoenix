@@ -78,7 +78,11 @@ function ClientModal({ client, onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2 className="modal-title">{client ? 'Edit Client' : 'Add New Client'}</h2>
           <button onClick={success ? onSuccess : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>

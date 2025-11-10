@@ -117,7 +117,11 @@ function CalibrationModal({ calibration, onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2 className="modal-title">
             {calibration ? 'Edit Calibration' : 'Add New Calibration'}

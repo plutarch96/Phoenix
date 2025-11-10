@@ -131,7 +131,12 @@ function BulkTestModal({ clients, project, lockClient = false, onClose, onSucces
 
   return (
     <div className="modal-overlay" onClick={success ? onSuccess : onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}
+      >
         <div className="modal-header">
           <h2 className="modal-title">Create Multiple Tests</h2>
           <button onClick={success ? onSuccess : onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
